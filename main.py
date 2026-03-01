@@ -1,28 +1,36 @@
 from core.listener import listen
 from voice.speaker import speak
-import time
+from brain.ai_engine import ask_ai
+from langdetect import detect as detect_lang
 
-STATE = "ACTIVE"
+print("Jarvis Activated. Say something...")
+speak("Jarvis Activated. How can I help you?")
 
 while True:
+    user_input = listen()
 
-    if STATE == "PASSIVE":
-        text = listen()
+    if not user_input:
+        continue
 
-        if text and "hey jarvis" in text:
-            speak("Yes Ishita?")
-            STATE = "ACTIVE"
+    user_input = user_input.strip().lower()
 
-    elif STATE == "ACTIVE":
-        text = listen()
+    if user_input in ["exit", "stop", "goodbye", "band karo", "बंद करो"]:
+        speak("Goodbye Ishita.")
+        break
 
-        if text:
-            text = text.strip().lower()
-            print("DEBUG TEXT:", repr(text))
+    print("You:", user_input)
 
-            if any(word in text for word in ["stop", "exit", "sleep", "go back"]):
-                print("STOP DETECTED")
-                speak("Okay, going to sleep.")
-                break
-            else:
-                speak("You said " + text)
+    # Detect language of user's input
+    try:
+        lang = detect_lang(user_input)
+        lang = 'hi' if lang == 'hi' else 'en'
+    except Exception:
+        lang = 'en'
+
+    print(f"[Lang detected: {lang}]")
+
+    response = ask_ai(user_input, lang=lang)
+
+    print("Jarvis:", response)
+
+    speak(response)
