@@ -1,6 +1,7 @@
 from core.listener import listen
 from voice.speaker import speak
 from brain.ai_engine import ask_ai
+from core.commands import handle_command
 from langdetect import detect as detect_lang
 
 print("Jarvis Activated. Say something...")
@@ -20,7 +21,14 @@ while True:
 
     print("You:", user_input)
 
-    # Detect language of user's input
+    # Check for system commands first (open/close apps)
+    result = handle_command(user_input)
+    if result:
+        print("Jarvis:", result)
+        speak(result)
+        continue
+
+    # Detect language and send to AI
     try:
         lang = detect_lang(user_input)
         lang = 'hi' if lang == 'hi' else 'en'
