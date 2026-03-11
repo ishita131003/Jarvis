@@ -1,4 +1,6 @@
 @echo off
-cd /d d:\rbu\BERAM\Jarvis
-python main.py
+cd /d "%~dp0"
+call venv\Scripts\activate
+start http://localhost:5000
+python app.py
 pause
