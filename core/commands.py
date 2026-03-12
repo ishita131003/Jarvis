@@ -1,9 +1,11 @@
 import subprocess
 import os
+import re
+from core.system_control import set_volume, change_brightness, capture_screenshot, media_control, power_control
 
 # Map of voice keywords → actual commands/app names
 APP_MAP = {
-    # System apps
+    # ... existing apps ...
     "notepad": "notepad.exe",
     "calculator": "calc.exe",
     "paint": "mspaint.exe",
@@ -34,10 +36,40 @@ APP_MAP = {
 
 def handle_command(text):
     """
-    Check if text is a system command like 'open notepad'.
-    Returns True if handled, False if should go to AI.
+    Check if text is a system command like 'open notepad' or 'set volume to 50'.
+    Returns a string response if handled, False if should go to AI.
     """
     text = text.lower().strip()
+
+    # --- VOLUME controls ---
+    if "volume" in text:
+        match = re.search(r"(\d+)", text)
+        if match:
+            level = int(match.group(1))
+            return set_volume(level)
+        if "up" in text: return set_volume(min(100, 100)) # Simple up/down logic can be refined
+        if "down" in text: return set_volume(max(0, 0))
+        if "mute" in text: return set_volume(0)
+
+    # --- BRIGHTNESS controls ---
+    if "brightness" in text:
+        match = re.search(r"(\d+)", text)
+        if match:
+            level = int(match.group(1))
+            return change_brightness(level)
+
+    # --- SCREENSHOT ---
+    if "screenshot" in text:
+        return capture_screenshot()
+
+    # --- MEDIA controls ---
+    for action in ["play", "pause", "next", "previous", "stop"]:
+        if action in text:
+            return media_control(action)
+
+    # --- POWER controls ---
+    if "lock" in text and "system" in text:
+        return power_control("lock")
 
     # --- OPEN commands ---
     if text.startswith("open "):

@@ -1,0 +1,15 @@
+flask
+flask-socketio
+requests
+python-dotenv
+langdetect
+pycaw
+screen-brightness-control
+pyautogui
+psutil
+comtypes
+pygame
+speechrecognition
+pyttsx3
+google-generativeai
+marked

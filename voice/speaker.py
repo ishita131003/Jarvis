@@ -7,11 +7,15 @@ import win32com.client
 from gtts import gTTS
 import pygame
 
-# Initialize pygame mixer once for Hindi/MP3 playback
-pygame.mixer.init()
-
-# Thread-safe queue for speech tasks
+# Global Speech Queue
 speech_queue = queue.Queue()
+
+# Global SAPI5 speaker for English
+_sapi_speaker = None
+try:
+    _sapi_speaker = win32com.client.Dispatch("SAPI.SpVoice")
+except Exception as e:
+    print(f"[Speaker] Failed to init SAPI5: {e}")
 
 def is_hindi(text):
     for char in text:
@@ -39,9 +43,8 @@ def _internal_speak_hindi(text):
 
 def _internal_speak_english(text):
     try:
-        # Use native Windows SAPI5 - much more stable than pyttsx3
-        speaker = win32com.client.Dispatch("SAPI.SpVoice")
-        speaker.Speak(text)
+        if _sapi_speaker:
+            _sapi_speaker.Speak(text)
     except Exception as e:
         print(f"[Speaker] English (SAPI5) Error: {e}")
 
@@ -73,11 +76,36 @@ worker_thread.start()
 def speak(text):
     """Adds a message to the speech queue. Non-blocking."""
     if not text: return
-    # If text is too long (AI responses), split by sentences for better flow? 
-    # For now, just queue the whole thing.
     speech_queue.put(text)
+
+def stop_speaking():
+    """Immediately stops any current speech and clears the queue."""
+    # 1. Clear the queue
+    while not speech_queue.empty():
+        try:
+            speech_queue.get_nowait()
+            speech_queue.task_done()
+        except queue.Empty:
+            break
+    
+    # 2. Stop Hindi (pygame)
+    try:
+        pygame.mixer.music.stop()
+    except:
+        pass
+        
+    # 3. Stop English (SAPI5 Purge)
+    try:
+        if _sapi_speaker:
+            # 1 = SVSFPurgeBeforeSpeak
+            _sapi_speaker.Speak("", 1)
+    except:
+        pass
+    
+    print("[Speaker] Audio stopped by user.")
 
 if __name__ == "__main__":
     speak("Hello, I am Jarvis. SAPI5 is now active.")
     speak("नमस्ते, मैं जार्विस हूँ।")
-    time.sleep(5)
+    time.sleep(2)
+    stop_speaking()
