@@ -141,7 +141,162 @@
         }
 
         /* === MAIN LAYOUT === */
+        .main-layout {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            width: 260px;
+            background: rgba(10, 10, 20, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            flex-shrink: 0;
+            z-index: 10;
+            transition: all 0.3s ease;
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+        }
+
+        .sidebar-logo-icon svg {
+            width: 16px;
+            height: 16px;
+            fill: #fff;
+        }
+
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .sidebar-nav::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+
+        .sidebar-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 0;
+            width: 3px;
+            background: var(--accent-cyan);
+            border-radius: 0 4px 4px 0;
+            transition: height 0.3s ease;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .sidebar-item:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
+        }
+
+        .sidebar-item:hover svg {
+            stroke: var(--accent-cyan);
+            transform: scale(1.1);
+        }
+
+        .sidebar-item.active {
+            color: var(--text-primary);
+            background: linear-gradient(90deg, rgba(0, 242, 255, 0.1), transparent);
+            border-color: rgba(0, 242, 255, 0.2);
+            font-weight: 500;
+        }
+
+        .sidebar-item.active::before {
+            height: 60%;
+        }
+
+        .sidebar-item.active svg {
+            stroke: var(--accent-cyan);
+            filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.5));
+        }
+
+        .sidebar-item svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-footer {
+            padding: 15px 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: auto;
+        }
+
+        .sidebar-item.settings {
+            margin-top: 10px;
+        }
+
+        /* === APP CONTAINER OVERRIDE === */
         .app-container {
+            flex: 1;
             position: relative;
             z-index: 1;
             display: flex;
@@ -973,38 +1128,76 @@
 
     <div class="particles" id="particles"></div>
 
-    <div class="app-container">
-        <!-- TOP NAVBAR -->
-        <nav class="navbar">
-            <div class="nav-logo-container">
-                <div class="nav-logo" id="navLogo">J.A.R.V.I.S.</div>
-                <input type="text" class="nav-logo-input" id="navLogoInput" style="display: none;" maxlength="15">
-                <button class="edit-name-btn" id="editNameBtn" title="Rename AI">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+    <div class="main-layout">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                </button>
-                <button class="save-name-btn" id="saveNameBtn" title="Save Name" style="display: none;">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                    </svg>
-                </button>
+                </div>
+                <div class="sidebar-title">WORKBENCH</div>
             </div>
-            <div class="nav-actions">
-                <button class="nav-btn" id="telemetryToggle">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                        <path d="M13 13v8h8v-8h-8zM3 21h8v-8H3v8zM3 3v8h8V3H3zm13.66 2L13.16 5.5l.5 3.5 3.5.5.5-3.5-3.5-.5z"/>
-                    </svg>
-                    <span>System Telemetry</span>
-                </button>
-                <button class="nav-btn" id="globalMuteBtn" title="Toggle Voice Responses">
-                    <svg id="muteIcon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                    </svg>
-                    <span>Audio</span>
-                </button>
+            
+            <div class="sidebar-nav">
+                <div class="sidebar-item active">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Images</span>
+                </div>
+                <div class="sidebar-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span>Documents</span>
+                </div>
+                <div class="sidebar-item">
+                    <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    <span>Code</span>
+                </div>
+                <div class="sidebar-item">
+                    <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    <span>Projects</span>
+                </div>
             </div>
-        </nav>
+            
+            <div class="sidebar-footer">
+                <div class="sidebar-item settings">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Settings</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="app-container">
+            <!-- TOP NAVBAR -->
+            <nav class="navbar">
+                <div class="nav-logo-container">
+                    <div class="nav-logo" id="navLogo">J.A.R.V.I.S.</div>
+                    <input type="text" class="nav-logo-input" id="navLogoInput" style="display: none;" maxlength="15">
+                    <button class="edit-name-btn" id="editNameBtn" title="Rename AI">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        </svg>
+                    </button>
+                    <button class="save-name-btn" id="saveNameBtn" title="Save Name" style="display: none;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="nav-actions">
+                    <button class="nav-btn" id="telemetryToggle">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M13 13v8h8v-8h-8zM3 21h8v-8H3v8zM3 3v8h8V3H3zm13.66 2L13.16 5.5l.5 3.5 3.5.5.5-3.5-3.5-.5z"/>
+                        </svg>
+                        <span>System Information</span>
+                    </button>
+                  <!-- Replace Audio with Voice Chat -->
+            <button class="nav-btn" id="voiceChatBtn" title="Start Voice Chat (Call)">
+                <svg viewBox="0 0 24 24"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
+                <span>Call</span>
+            </button>
+                </div>
+            </nav>
 
         <!-- Telemetry Dropdown -->
         <div class="telemetry-dropdown" id="telemetryDropdown">
@@ -1103,6 +1296,7 @@
                 <button id="clearImg" style="position: absolute; top: 5px; left: 85px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer;">×</button>
             </div>
         </div>
+    </div>
     </div>
 
     <script>
@@ -1320,6 +1514,14 @@
             updateAIName(savedName);
         }
 
+        // Voice Chat Button Redirect
+        const voiceChatBtn = document.getElementById('voiceChatBtn');
+        if (voiceChatBtn) {
+            voiceChatBtn.addEventListener('click', () => {
+                window.location.href = '/voice-mode';
+            });
+        }
+
         editNameBtn.addEventListener('click', () => {
             navLogo.style.display = 'none';
             editNameBtn.style.display = 'none';
@@ -1408,6 +1610,17 @@
                 container.appendChild(p);
             }
         }
+
+        // --- Sidebar Interactions ---
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // Remove active class from all items
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+            });
+        });
 
         // --- Initialize ---
         socket.on('connect', () => {

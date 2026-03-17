@@ -1,0 +1,2 @@
+Query: Hello Jarvis, give me a short fact about space.
+Response: I'm deeply sorry, but even after 20 attempts, the API traffic is preventing me from responding. Please check your OpenRouter account or try again in a moment.

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Chat - J.A.R.V.I.S.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-color: #00d2ff;
+            --text-color: #ffffff;
+            --danger-color: #ff4b2b;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+        }
+
+        .orb-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 50px;
+        }
+
+        .orb {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-color) 0%, rgba(0, 210, 255, 0.2) 70%, transparent 100%);
+            box-shadow: 0 0 50px var(--accent-color);
+            animation: pulse 2s infinite ease-in-out;
+            position: relative;
+        }
+
+        .orb::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 50px var(--accent-color); }
+            50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 100px var(--accent-color); }
+            100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 50px var(--accent-color); }
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .status {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            height: 2rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        .end-call-btn {
+            background: rgba(255, 75, 43, 0.1);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+            padding: 15px 40px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+        }
+
+        .end-call-btn:hover {
+            background: var(--danger-color);
+            color: white;
+            box-shadow: 0 0 20px var(--danger-color);
+        }
+
+        .end-call-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Particle Background */
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .listening .orb {
+            background: radial-gradient(circle, #00ff88 0%, rgba(0, 255, 136, 0.2) 70%, transparent 100%);
+            box-shadow: 0 0 80px #00ff88;
+        }
+
+        .speaking .orb {
+            animation: speaking-pulse 0.5s infinite ease-in-out;
+        }
+
+        .thinking .orb {
+            background: radial-gradient(circle, #ffcc00 0%, rgba(255, 204, 0, 0.2) 70%, transparent 100%);
+            box-shadow: 0 0 80px #ffcc00;
+            animation: thinking-pulse 1s infinite ease-in-out;
+        }
+
+        @keyframes thinking-pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+
+        @keyframes speaking-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles"></div>
+    
+    <div class="container">
+        <div class="orb-container" id="orbWrapper">
+            <div class="orb" id="jarvisOrb"></div>
+        </div>
+        
+        <div class="status" id="statusLabel">Initializing...</div>
+        
+        <button class="end-call-btn" id="endCallBtn">
+            <svg viewBox="0 0 24 24"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
+            End Call
+        </button>
+    </div>
+
+    <script>
+        const socket = io();
+        const statusLabel = document.getElementById('statusLabel');
+        const orbWrapper = document.getElementById('orbWrapper');
+        const endCallBtn = document.getElementById('endCallBtn');
+
+        socket.on('connect', () => {
+            console.log('Connected to JARVIS');
+            socket.emit('start_voice_mode');
+        });
+
+        socket.on('voice_status', (data) => {
+            statusLabel.innerText = data.status;
+            
+            orbWrapper.className = 'orb-container';
+            if (data.mode === 'listening') {
+                orbWrapper.classList.add('listening');
+            } else if (data.mode === 'speaking') {
+                orbWrapper.classList.add('speaking');
+            } else if (data.mode === 'thinking') {
+                orbWrapper.classList.add('thinking');
+            }
+        });
+
+        endCallBtn.onclick = () => {
+            window.location.href = '/';
+        };
+
+        // Simple star particles
+        const canvas = document.createElement('canvas');
+        document.getElementById('particles').appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2;
+                this.speed = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.y -= this.speed;
+                if (this.y < 0) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(0, 210, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 100; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.onresize = resize;
+        resize();
+        animate();
+    </script>
+</body>
+</html>

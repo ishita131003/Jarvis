@@ -5,11 +5,14 @@ recognizer.pause_threshold = 1.5      # stop after 1.5s of silence (instant but 
 recognizer.energy_threshold = 300      # fixed sensitivity (lower = more sensitive)
 recognizer.dynamic_energy_threshold = False  # don't auto-adjust (was causing it to ignore voice)
 
-def listen():
+def listen(timeout=None, phrase_time_limit=None):
     with sr.Microphone() as source:
-        print("[Listener] Ready! Speak now... (stops after 1.5s of silence)")
-        audio = recognizer.listen(source, timeout=None, phrase_time_limit=None)
-        print("[Listener] Got audio, processing...")
+        print(f"[Listener] Ready! (timeout={timeout}, phrase_limit={phrase_time_limit})")
+        try:
+            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
+            print("[Listener] Got audio, processing...")
+        except sr.WaitTimeoutError:
+            return None
 
     try:
         text = recognizer.recognize_google(audio)

@@ -13,21 +13,54 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ─── API Keys ─────────────────────────────────────────────────────────────────
-GEMINI_API_KEY     = os.getenv("GEMINI_API_KEY")
+HF_API_KEY         = os.getenv("HF_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}"
+HF_URL = "https://api-inference.huggingface.co/models/{model}"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# ─── OpenRouter Models (High-Stability Free Tier) ─────────────────────────────
+# ─── Models ───────────────────────────────────────────────────────────────────
+# FAST MODELS FIRST
 OR_MODELS = [
-    "arcee-ai/trinity-large:free",
-    "nvidia/nemotron-nano-12b-v2-vl:free",
+    "stepfun/step-3.5-flash:free",
+    "google/gemini-2.0-flash-lite-preview-02-05:free",
+    "google/gemini-2.5-pro-exp-03-25:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "nousresearch/hermes-3-llama-3.1-405b:free",
     "qwen/qwen3-coder:free",
-    "mistralai/mistral-7b-instruct:free",
-    "google/gemma-2-9b-it:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "openrouter/auto:free" 
 ]
+
+HF_MODELS = [
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "HuggingFaceH4/zephyr-7b-beta"
+]
+
+def _huggingface_call(messages: list) -> str | None:
+    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+    # Join messages into a single prompt for simpler HF models
+    prompt = "\n".join([f"{m['role']}: {m['content']}" for m in messages]) + "\nassistant: "
+    
+    for model in HF_MODELS:
+        try:
+            print(f"[AI] Trying HuggingFace: {model}")
+            r = requests.post(HF_URL.format(model=model), headers=headers, json={"inputs": prompt, "parameters": {"max_new_tokens": 512}}, timeout=15)
+            if r.status_code == 200:
+                result = r.json()
+                if isinstance(result, list) and 'generated_text' in result[0]:
+                    text = result[0]['generated_text']
+                    # Clean up if model echoes prompt
+                    if "assistant: " in text:
+                        return text.split("assistant: ")[-1].strip()
+                    return text.strip()
+            print(f"[AI] HF {model} Status: {r.status_code}")
+        except Exception as e:
+            print(f"[AI] HF Exception: {e}")
+            continue
+    return None
 
 def classify_query(query: str) -> str:
     q = query.lower().strip()
@@ -39,89 +72,40 @@ def classify_query(query: str) -> str:
     if any(t in q for t in ["what is", "how to", "explain", "why", "who"]): return "knowledge"
     return "simple"
 
-def _gemini_call(messages: list, max_tokens: int) -> str | None:
-    # Convert OpenAI messages to Gemini format properly
-    gemini_contents = []
-    # system instructions are usually first
-    system_instr = ""
-    for msg in messages:
-        if msg["role"] == "system":
-            system_instr = msg["content"]
-        else:
-            role = "user" if msg["role"] == "user" else "model"
-            content = msg["content"]
-            
-            parts = []
-            # Prepend system instruction to the first user message if necessary
-            if role == "user" and system_instr:
-                text_prefix = system_instr + "\n\n"
-                system_instr = ""
-            else:
-                text_prefix = ""
+# _gemini_call removed to prioritize Llama as requested.
 
-            if isinstance(content, str):
-                parts.append({"text": text_prefix + content})
-            elif isinstance(content, list):
-                for part in content:
-                    if part["type"] == "text":
-                        parts.append({"text": text_prefix + part["text"]})
-                        text_prefix = "" # only prepend once
-                    elif part["type"] == "image_url":
-                        # Extract mime type and base64 data from "data:image/jpeg;base64,..."
-                        try:
-                            header, b64_data = part["image_url"]["url"].split(";base64,")
-                            mime_type = header.replace("data:", "")
-                        except Exception:
-                            mime_type = "image/jpeg"
-                            b64_data = part["image_url"]["url"].split(",")[1]
-                            
-                        parts.append({
-                            "inline_data": {
-                                "mime_type": mime_type,
-                                "data": b64_data
-                            }
-                        })
-            
-            gemini_contents.append({"role": role, "parts": parts})
-
-    payload = {"contents": gemini_contents, "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.7}}
-    url = GEMINI_URL.format(key=GEMINI_API_KEY)
-    
-    # Try with backoff for 429
-    for attempt in range(2):
-        try:
-            r = requests.post(url, json=payload, timeout=20)
-            if r.status_code == 200:
-                result = r.json()
-                if 'candidates' in result and result['candidates']:
-                    return result['candidates'][0]['content']['parts'][0]['text'].strip()
-            if r.status_code == 429:
-                print(f"[AI] Gemini Busy (429). Waiting 10s...")
-                if attempt == 0: time.sleep(10) # Wait 10s for reset
-            else:
-                print(f"[AI] Gemini {r.status_code} Error")
-        except Exception as e:
-            print(f"[AI] Gemini Exception: {e}")
-    return None
-
-def _openrouter_call(messages: list, max_tokens: int) -> str | None:
+def _openrouter_call(messages: list, max_tokens: int, pass_num: int = 1) -> str | None:
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://jarvis-ai-assistant.local",
         "X-Title": "Jarvis AI"
     }
+    
+    # In later passes, we might want to prioritize faster/lighter models
+    # for now, we just loop the whole list
     for model in OR_MODELS:
         payload = {"model": model, "messages": messages, "max_tokens": max_tokens, "temperature": 0.7}
         try:
-            print(f"[AI] Trying OpenRouter fallback: {model}")
+            print(f"[AI] [Pass {pass_num}] Trying: {model}")
             r = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=25)
+            
             if r.status_code == 200:
                 result = r.json()
                 if 'choices' in result and result['choices']:
-                    return result['choices'][0]['message']['content'].strip()
-            print(f"[AI] OR {model} status: {r.status_code}")
-        except Exception: 
+                    content = result['choices'][0]['message']['content'].strip()
+                    if content: return content
+            
+            if r.status_code == 429:
+                print(f"[AI] {model} Rate Limited (429).")
+                # Wait longer on 429
+                time.sleep(1 * pass_num) 
+            else:
+                print(f"[AI] {model} Error: {r.status_code}")
+                # No sleep for 404/400 - move fast!
+                
+        except Exception as e:
+            print(f"[AI] Exception for {model}: {e}")
             continue
     return None
 
@@ -161,19 +145,24 @@ def ask_ai(question: str, lang: str = "en", search_context: str = "", history: l
     
     messages.append({"role": "user", "content": user_content})
 
-    # Strategy: Gemini primary (best) -> OpenRouter fallbacks
-    print(f"[AI] Routing: {route.upper()}")
-    result = _gemini_call(messages, tokens)
-    
-    if not result:
-        print("[AI] Primary service busy. Switching to backup providers...")
-        result = _openrouter_call(messages, tokens)
-    
-    if not result:
-        # User-friendly guidance
-        return (
-            "I'm currently experiencing high traffic on my free AI routes. "
-            "Please wait about 20-30 seconds and try again! I'll be ready for you then."
-        )
+    # 1. Try FAST HuggingFace first (Usually very stable for free keys)
+    print(f"[AI] Strategy: HF Initial...")
+    result = _huggingface_call(messages)
+    if result:
+        return result
+
+    # 2. TRUE PERSISTENCE: OpenRouter Loop
+    pass_num = 1
+    while True:
+        print(f"[AI] Attempting Pass {pass_num} of all OpenRouter models...")
+        result = _openrouter_call(messages, tokens, pass_num=pass_num)
+        if result:
+            return result
+        
+        # Exponential backoff between passes
+        wait_time = min(60, 10 + (pass_num * 5))
+        print(f"[AI] All models busy. Retrying in {wait_time}s... (Keep waiting, Jarvis will find a way)")
+        time.sleep(wait_time)
+        pass_num += 1
 
     return result

@@ -1,11 +1,11 @@
 import threading
 import webbrowser
 import psutil
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 
 from core.listener import listen
-from voice.speaker import speak, stop_speaking
+from voice.speaker import speak, stop_speaking, wait_until_finished
 from brain.ai_engine import ask_ai
 from brain.web_search import web_search, needs_search
 from core.commands import handle_command
@@ -45,9 +45,104 @@ def emit_system_stats():
             print(f"[Stats Error] {e}")
         socketio.sleep(2)
 
+# Global flag to control voice mode loop
+voice_mode_active = {}
+
+def voice_interaction_loop(sid):
+    """Continuous loop for voice-only interaction."""
+    print(f"[VoiceMode] Loop started for {sid}")
+    while voice_mode_active.get(sid, False):
+        try:
+            # 1. Notify frontend we are listening
+            socketio.emit('voice_status', {'mode': 'listening', 'status': 'Listening...'}, room=sid)
+            
+            # 2. Capture voice input
+            text = listen()
+            
+            if not text:
+                continue
+            
+            print(f"[VoiceMode] User said: {text}")
+            
+            if any(cmd in text.lower() for cmd in ["exit", "stop", "quit", "bye"]):
+                socketio.emit('voice_status', {'mode': 'idle', 'status': 'Ending call...'}, room=sid)
+                speak("Goodbye Sir. Ending call.")
+                break
+
+            # Detect language for better response
+            # Simple check for Devanagari 
+            is_hindi_input = any('\u0900' <= char <= '\u097F' for char in text)
+            lang_code = 'hi' if is_hindi_input else 'en'
+
+            # 3. Notify frontend we are processing
+            socketio.emit('voice_status', {'mode': 'thinking', 'status': 'Thinking...'}, room=sid)
+            
+            # 4. Get AI response (infinite loop internally, but we can emit updates if possible)
+            # Actually ask_ai blocks, so we can't easily emit from here unless we change ask_ai
+            response_text = ask_ai(text, lang=lang_code, search_context="", history=[])
+
+            # 5. Notify frontend we are speaking and speak it
+            socketio.emit('voice_status', {'mode': 'speaking', 'status': 'Jarvis is speaking...'}, room=sid)
+            speak(response_text)
+            
+            # 6. Barge-in Logic: Listen while speaking
+            # We use a short phrase limit to detect interruption quickly
+            while voice_mode_active.get(sid, False):
+                # Check if speaking is done
+                from voice.speaker import is_speaking_now
+                if not is_speaking_now:
+                    break
+                
+                # Try a quick "background" listen for interruption
+                # We use a shorter phrase_time_limit for barge-in detection
+                try:
+                    # Quick listen with short phrase limit to detect sound/voice
+                    interrupt_text = listen(timeout=0.5, phrase_time_limit=2)
+                    if interrupt_text:
+                        print(f"[BargeIn] User interrupted with: {interrupt_text}")
+                        stop_speaking()
+                        # Immediately process the interruption as new input
+                        text = interrupt_text
+                        # Jump back to the start of processing (step 3)
+                        # We simulate a "goto" by updating text and skipping wait
+                        socketio.emit('voice_status', {'mode': 'thinking', 'status': 'Thinking...'}, room=sid)
+                        response_text = ask_ai(text, lang=lang_code, search_context="", history=[])
+                        socketio.emit('voice_status', {'mode': 'speaking', 'status': 'Jarvis is speaking...'}, room=sid)
+                        speak(response_text)
+                        continue 
+                except Exception:
+                    # Timeout or no voice detected, just check if still speaking
+                    pass
+                
+                time.sleep(0.1)
+            
+            # 6. Wait for speech to finish before next listen (if not interrupted)
+            wait_until_finished()
+            
+        except Exception as e:
+            print(f"[VoiceMode] Loop Error: {e}")
+            break
+    
+    print(f"[VoiceMode] Loop ended for {sid}")
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/voice-mode')
+def voice_mode():
+    return render_template('voice_mode.html')
+
+@socketio.on('start_voice_mode')
+def handle_start_voice_mode():
+    sid = request.sid
+    voice_mode_active[sid] = True
+    threading.Thread(target=voice_interaction_loop, args=(sid,), daemon=True).start()
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    sid = request.sid
+    voice_mode_active[sid] = False
 
 @socketio.on('connect')
 def on_connect():
