@@ -144,12 +144,16 @@ def ask_ai(question: str, lang: str = "en", search_context: str = "", history: l
         # Note: _gemini_call needs to be updated to handle multi-modal inputs.
     
     messages.append({"role": "user", "content": user_content})
-
+    
     # 1. Try FAST HuggingFace first (Usually very stable for free keys)
-    print(f"[AI] Strategy: HF Initial...")
-    result = _huggingface_call(messages)
-    if result:
-        return result
+    # CRITICAL: Skip HF if image_data is present, as our current HF models are TEXT-ONLY.
+    if not image_data:
+        print(f"[AI] Strategy: HF Initial...")
+        result = _huggingface_call(messages)
+        if result:
+            return result
+    else:
+        print(f"[AI] Vision detected. Skipping text-only HF fallbacks.")
 
     # 2. TRUE PERSISTENCE: OpenRouter Loop
     pass_num = 1

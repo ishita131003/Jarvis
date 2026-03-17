@@ -1339,7 +1339,7 @@
 
         // --- Messages ---
         socket.on('user_message', (data) => {
-            addMessage(data.text, 'user');
+            addMessage(data.text, 'user', data.image);
         });
 
         socket.on('bot_message', (data) => {
@@ -1386,10 +1386,22 @@
                 stopBtn.onclick = () => socket.emit('stop_audio');
                 msg.appendChild(stopBtn);
             } else {
-                // User messages: plain text
-                const content = document.createElement('span');
-                content.textContent = text;
-                msg.appendChild(content);
+                // User messages: text + optional image
+                if (text) {
+                    const content = document.createElement('span');
+                    content.textContent = text;
+                    msg.appendChild(content);
+                }
+                
+                if (arguments[2]) { // image data
+                    const img = document.createElement('img');
+                    img.src = 'data:image/jpeg;base64,' + arguments[2];
+                    img.style.maxWidth = '100%';
+                    img.style.borderRadius = '12px';
+                    img.style.marginTop = '10px';
+                    img.style.border = '1px solid rgba(0, 212, 255, 0.2)';
+                    msg.appendChild(img);
+                }
             }
 
             chatMessages.appendChild(msg);

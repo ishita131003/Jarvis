@@ -185,8 +185,8 @@ def on_send_message(data):
     if not user_input and not image_data:
         return
 
-    if user_input:
-        emit('user_message', {'text': user_input})
+    if user_input or image_data:
+        emit('user_message', {'text': user_input, 'image': image_data})
 
     # Check for exit commands
     if user_input in ["exit", "stop", "goodbye", "band karo", "बंद करो"]:
