@@ -13,3 +13,4 @@ speechrecognition
 pyttsx3
 google-generativeai
 marked
+pymupdf

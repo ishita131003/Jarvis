@@ -1,3 +1,12 @@
+import sys
+import site
+import os
+
+# Defensive: Ensure user-site-packages are in path for Windows
+user_site = site.getusersitepackages()
+if user_site not in sys.path:
+    sys.path.append(user_site)
+
 import threading
 import webbrowser
 import psutil
@@ -11,6 +20,9 @@ from brain.web_search import web_search, needs_search
 from core.commands import handle_command
 from core.system_control import get_system_stats
 from langdetect import detect as detect_lang
+import base64
+import io
+import fitz  # PyMuPDF
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'jarvis-secret-key'
@@ -125,6 +137,19 @@ def voice_interaction_loop(sid):
     
     print(f"[VoiceMode] Loop ended for {sid}")
 
+def extract_text_from_pdf(base64_data):
+    """Extract text from a base64 encoded PDF using PyMuPDF."""
+    try:
+        pdf_data = base64.b64decode(base64_data)
+        doc = fitz.open(stream=pdf_data, filetype="pdf")
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text.strip()
+    except Exception as e:
+        print(f"[PDF Error] {e}")
+        return f"Error extracting text: {str(e)}"
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -180,13 +205,15 @@ def on_start_listening():
 def on_send_message(data):
     """Triggered when user sends a text message."""
     user_input = data.get('text', '').strip().lower()
-    image_data = data.get('image', None) # Base64 image data from frontend
+    file_data = data.get('file', None)
+    file_type = data.get('file_type', 'image')
+    file_name = data.get('file_name', '')
 
-    if not user_input and not image_data:
+    if not user_input and not file_data:
         return
 
-    if user_input or image_data:
-        emit('user_message', {'text': user_input, 'image': image_data})
+    if user_input or file_data:
+        emit('user_message', {'text': user_input, 'file': file_data, 'file_type': file_type, 'file_name': file_name})
 
     # Check for exit commands
     if user_input in ["exit", "stop", "goodbye", "band karo", "बंद करो"]:
@@ -196,12 +223,12 @@ def on_send_message(data):
         return
 
     def process_in_thread():
-        process_input(user_input, image_data=image_data)
+        process_input(user_input, file_data=file_data, file_type=file_type)
 
     thread = threading.Thread(target=process_in_thread, daemon=True)
     thread.start()
 
-def process_input(user_input, image_data=None):
+def process_input(user_input, file_data=None, file_type='image'):
     """Process user input through commands or AI."""
     import traceback
     try:
@@ -242,8 +269,19 @@ def process_input(user_input, image_data=None):
         full_context = search_context
         if stats_context:
             full_context = (full_context + "\n" + stats_context).strip()
+            
+        # PDF Text Extraction
+        pdf_text = ""
+        if file_data and file_type == 'pdf':
+            socketio.emit('status', {'state': 'thinking', 'message': 'Analyzing PDF...'})
+            pdf_text = extract_text_from_pdf(file_data)
+            if pdf_text:
+                full_context = (full_context + "\n\nAttached PDF Content:\n" + pdf_text).strip()
 
-        response = ask_ai(user_input or "Describe this image.", lang=lang, search_context=full_context, history=current_history, image_data=image_data)
+        # Image Data for Vision
+        image_data = file_data if file_data and file_type == 'image' else None
+
+        response = ask_ai(user_input or "Analyze the attached file.", lang=lang, search_context=full_context, history=current_history, image_data=image_data)
         
         socketio.emit('bot_message', {'text': response})
         

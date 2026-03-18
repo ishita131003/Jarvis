@@ -985,15 +985,17 @@
 
         .input-wrapper {
             display: flex;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column; /* Stack preview and controls */
+            align-items: flex-start;
+            gap: 0;
             background: rgba(15, 15, 45, 0.6);
-            padding: 8px 12px;
+            padding: 0; /* Let children handle padding */
             border-radius: 20px;
             border: var(--glass-border);
             backdrop-filter: blur(15px);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            overflow: hidden; /* Keep preview corners inside */
         }
 
         .input-wrapper:focus-within {
@@ -1116,6 +1118,107 @@
                 max-width: 90%;
                 font-size: 0.85rem;
             }
+        }
+
+        /* === CLASSY PDF PREVIEW & ATTACHMENTS === */
+        .pdf-preview-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(15, 15, 30, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            padding: 12px 18px;
+            border-radius: 14px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            animation: slideUpFade 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 
+                        inset 0 0 15px rgba(255, 68, 68, 0.05);
+            max-width: fit-content;
+            position: relative;
+            z-index: 10;
+        }
+
+        .pdf-preview-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(255, 68, 68, 0.4), transparent, rgba(0, 242, 255, 0.2));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .pdf-icon-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, rgba(255, 68, 68, 0.2), rgba(255, 20, 20, 0.1));
+            border-radius: 10px;
+            color: #ff3333;
+            box-shadow: 0 4px 12px rgba(255, 68, 68, 0.2);
+            flex-shrink: 0;
+        }
+
+        .pdf-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 120px;
+        }
+
+        .pdf-meta-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #ff5555;
+            font-weight: 800;
+            opacity: 0.9;
+        }
+
+        .pdf-meta-name {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            max-width: 280px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .pdf-attachment-bubble {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 68, 68, 0.25);
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+
+        .pdf-attachment-bubble:hover {
+            background: rgba(255, 68, 68, 0.08);
+            border-color: rgba(255, 68, 68, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.15);
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -1276,31 +1379,33 @@
 
             <!-- Input Area -->
             <div class="input-container">
-                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                <input type="file" id="fileInput" accept="image/*, application/pdf" style="display: none;">
                 <div class="input-wrapper">
-                    <button class="attach-btn" id="attachBtn" title="Attach Image">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                        </svg>
-                    </button>
-                    <input type="text" class="text-input" id="textInput" placeholder="Command Jarvis..." autocomplete="off">
-                    <button class="mic-btn" id="micBtn" title="Speak to Jarvis">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                        </svg>
-                    </button>
-                    <button class="send-btn" id="sendBtn" title="Send Command">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                        </svg>
-                    </button>
+                    <!-- Preview shared between Image and PDF -->
+                    <div id="imagePreview" style="display: none; width: 100%; padding: 10px; border-bottom: 1px solid rgba(0,212,255,0.1); position: relative; margin-bottom: 5px;">
+                        <img id="previewImg" src="" style="max-height: 80px; border-radius: 8px; border: 1px solid var(--accent-cyan);">
+                        <button id="clearImg" style="position: absolute; top: 15px; left: 85px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20;">×</button>
+                    </div>
+
+                    <div class="input-controls" style="display: flex; align-items: center; width: 100%; gap: 12px;">
+                        <button class="attach-btn" id="attachBtn" title="Attach Image">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c0 1.1.9-2 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                            </svg>
+                        </button>
+                        <input type="text" class="text-input" id="textInput" placeholder="Command Jarvis..." autocomplete="off" style="background: transparent; border: none; padding: 12px 0;">
+                        <button class="mic-btn" id="micBtn" title="Speak to Jarvis">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                            </svg>
+                        </button>
+                        <button class="send-btn" id="sendBtn" title="Send Command">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Preview of attached image -->
-            <div id="imagePreview" style="display: none; padding: 10px; border-top: 1px solid rgba(0,212,255,0.1); position: relative;">
-                <img id="previewImg" src="" style="max-height: 80px; border-radius: 8px; border: 1px solid var(--accent-cyan);">
-                <button id="clearImg" style="position: absolute; top: 5px; left: 85px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer;">×</button>
             </div>
         </div>
     </div>
@@ -1346,7 +1451,7 @@
 
         // --- Messages ---
         socket.on('user_message', (data) => {
-            addMessage(data.text, 'user', data.image);
+            addMessage(data.text, 'user', data.file || data.image, data.file_type || 'image', data.file_name || '');
         });
 
         socket.on('bot_message', (data) => {
@@ -1360,7 +1465,7 @@
             gfm: true,         // GitHub Flavored Markdown
         });
 
-        function addMessage(text, type) {
+        function addMessage(text, type, fileData, fileType, fileName) {
             // Remove welcome message if present
             const welcome = chatMessages.querySelector('.welcome-message');
             if (welcome) welcome.remove();
@@ -1393,21 +1498,42 @@
                 stopBtn.onclick = () => socket.emit('stop_audio');
                 msg.appendChild(stopBtn);
             } else {
-                // User messages: text + optional image
+                // User messages: text + optional file (image/pdf)
                 if (text) {
                     const content = document.createElement('span');
                     content.textContent = text;
                     msg.appendChild(content);
                 }
                 
-                if (arguments[2]) { // image data
-                    const img = document.createElement('img');
-                    img.src = 'data:image/jpeg;base64,' + arguments[2];
-                    img.style.maxWidth = '100%';
-                    img.style.borderRadius = '12px';
-                    img.style.marginTop = '10px';
-                    img.style.border = '1px solid rgba(0, 212, 255, 0.2)';
-                    msg.appendChild(img);
+                const fileData = arguments[2];
+                const fileType = arguments[3]; // 'image' or 'pdf'
+                const fileName = arguments[4]; // Optional filename
+
+                if (fileData) {
+                    if (fileType === 'pdf') {
+                        const pdfLink = document.createElement('div');
+                        pdfLink.className = 'pdf-attachment-bubble';
+                        pdfLink.innerHTML = `
+                            <div class="pdf-icon-box" style="width: 32px; height: 32px;">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/>
+                                </svg>
+                            </div>
+                            <div class="pdf-meta">
+                                <span class="pdf-meta-label" style="font-size: 0.55rem;">Document</span>
+                                <span class="pdf-meta-name" style="font-size: 0.75rem; max-width: 200px;">${fileName || 'Reference Attached'}</span>
+                            </div>
+                        `;
+                        msg.appendChild(pdfLink);
+                    } else {
+                        const img = document.createElement('img');
+                        img.src = 'data:image/jpeg;base64,' + fileData;
+                        img.style.maxWidth = '100%';
+                        img.style.borderRadius = '12px';
+                        img.style.marginTop = '10px';
+                        img.style.border = '1px solid rgba(0, 212, 255, 0.2)';
+                        msg.appendChild(img);
+                    }
                 }
             }
 
@@ -1462,23 +1588,63 @@
             }
         });
 
-        // --- Vision Support ---
+        // --- File Support (Images & PDFs) ---
         const attachBtn = document.getElementById('attachBtn');
-        const imageInput = document.getElementById('imageInput');
+        const fileInput = document.getElementById('fileInput');
         const imagePreview = document.getElementById('imagePreview');
         const previewImg = document.getElementById('previewImg');
         const clearImg = document.getElementById('clearImg');
-        let currentImageData = null;
+        let currentFileData = null;
+        let currentFileType = null;
+        let currentFileName = "";
 
-        attachBtn.addEventListener('click', () => imageInput.click());
+        attachBtn.addEventListener('click', () => fileInput.click());
 
-        imageInput.addEventListener('change', (e) => {
+        fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    currentImageData = event.target.result.split(',')[1];
-                    previewImg.src = event.target.result;
+                    currentFileData = event.target.result.split(',')[1];
+                    currentFileType = file.type.includes('pdf') ? 'pdf' : 'image';
+                    currentFileName = file.name;
+                    if (currentFileType === 'pdf') {
+                        previewImg.style.display = 'none';
+                        const pdfIndicator = document.createElement('div');
+                        pdfIndicator.id = 'pdfIndicator';
+                        pdfIndicator.className = 'pdf-preview-container';
+                        pdfIndicator.innerHTML = `
+                            <div class="pdf-icon-box">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                    <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/>
+                                </svg>
+                            </div>
+                            <div class="pdf-meta">
+                                <span class="pdf-meta-label">Attached Document</span>
+                                <span class="pdf-meta-name">${file.name}</span>
+                            </div>
+                        `;
+                        const existingIndicator = imagePreview.querySelector('#pdfIndicator');
+                        if (existingIndicator) existingIndicator.remove();
+                        imagePreview.appendChild(pdfIndicator);
+                        imagePreview.style.borderTop = "none"; 
+                        
+                        // Adjust Clear Button for PDF
+                        clearImg.style.left = "auto";
+                        clearImg.style.right = "15px";
+                        clearImg.style.top = "15px";
+                    } else {
+                        previewImg.src = event.target.result;
+                        previewImg.style.display = 'block';
+                        imagePreview.style.borderBottom = "1px solid rgba(0,212,255,0.1)";
+                        const pdfIndicator = imagePreview.querySelector('#pdfIndicator');
+                        if (pdfIndicator) pdfIndicator.remove();
+                        
+                        // Reset Clear Button for Image
+                        clearImg.style.left = "85px";
+                        clearImg.style.right = "auto";
+                        clearImg.style.top = "15px";
+                    }
                     imagePreview.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
@@ -1486,24 +1652,34 @@
         });
 
         clearImg.addEventListener('click', () => {
-            currentImageData = null;
-            imageInput.value = '';
+            currentFileData = null;
+            currentFileType = null;
+            currentFileName = "";
+            fileInput.value = '';
             imagePreview.style.display = 'none';
+            const pdfIndicator = imagePreview.querySelector('#pdfIndicator');
+            if (pdfIndicator) pdfIndicator.remove();
         });
 
         function sendText() {
             const text = textInput.value.trim();
-            if (!text && !currentImageData) return;
+            if (!text && !currentFileData) return;
             
             socket.emit('send_message', { 
                 text: text,
-                image: currentImageData 
+                file: currentFileData,
+                file_type: currentFileType,
+                file_name: currentFileName
             });
             
             textInput.value = '';
-            currentImageData = null;
+            currentFileData = null;
+            currentFileType = null;
+            currentFileName = "";
             imagePreview.style.display = 'none';
-            imageInput.value = '';
+            fileInput.value = '';
+            const pdfIndicator = imagePreview.querySelector('#pdfIndicator');
+            if (pdfIndicator) pdfIndicator.remove();
         }
 
         // --- Navbar Controls ---
