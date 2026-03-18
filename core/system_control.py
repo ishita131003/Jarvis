@@ -1,10 +1,29 @@
 import os
 import psutil
-import pyautogui
-import ctypes
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from comtypes import CLSCTX_ALL
-from screen_brightness_control import set_brightness, get_brightness
+
+# --- Hardware Dependent Imports ---
+HAS_PYAUTOGUI = False
+try:
+    import pyautogui
+    HAS_PYAUTOGUI = True
+except ImportError:
+    print("[SystemControl] pyautogui not installed (skipping UI automation).")
+
+HAS_PYCAW = False
+try:
+    from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+    from comtypes import CLSCTX_ALL
+    import ctypes
+    HAS_PYCAW = True
+except ImportError:
+    print("[SystemControl] pycaw/comtypes not installed (skipping volume control).")
+
+HAS_BRIGHTNESS = False
+try:
+    from screen_brightness_control import set_brightness, get_brightness
+    HAS_BRIGHTNESS = True
+except ImportError:
+    print("[SystemControl] screen-brightness-control not installed.")
 
 def get_system_stats():
     """Returns CPU, RAM, Battery, and Brightness percentage."""
@@ -12,16 +31,23 @@ def get_system_stats():
     ram = psutil.virtual_memory().percent
     
     # Battery
-    battery = psutil.sensors_battery()
-    bat_percent = battery.percent if battery else "N/A"
+    try:
+        battery = psutil.sensors_battery()
+        bat_percent = battery.percent if battery else "N/A"
+    except Exception:
+        bat_percent = "N/A"
     
     # Brightness
-    try:
-        brightness = get_brightness()
-        if isinstance(brightness, list):
-            brightness = brightness[0]
-    except Exception:
-        brightness = "N/A"
+    brightness = "N/A"
+    if HAS_BRIGHTNESS:
+        try:
+            curr_brightness = get_brightness()
+            if isinstance(curr_brightness, list):
+                brightness = curr_brightness[0]
+            else:
+                brightness = curr_brightness
+        except Exception:
+            brightness = "N/A"
         
     return {
         "cpu": cpu,
@@ -32,11 +58,12 @@ def get_system_stats():
 
 def set_volume(level):
     """Sets system volume (0-100)."""
+    if not HAS_PYCAW:
+        return "Volume control is not supported on this platform/environment."
     try:
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         volume = ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
-        # Range is 0.0 to 1.0
         volume.SetMasterVolumeLevelScalar(level / 100, None)
         return f"Volume set to {level} percent."
     except Exception as e:
@@ -44,6 +71,8 @@ def set_volume(level):
 
 def change_brightness(level):
     """Sets screen brightness (0-100)."""
+    if not HAS_BRIGHTNESS:
+        return "Brightness control is not supported on this platform/environment."
     try:
         set_brightness(level)
         return f"Brightness set to {level} percent."
@@ -52,6 +81,8 @@ def change_brightness(level):
 
 def capture_screenshot(save_path="static/screenshots/last_screenshot.png"):
     """Takes a screenshot and saves it."""
+    if not HAS_PYAUTOGUI:
+        return "Screenshot capture is not supported in this environment."
     try:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         pyautogui.screenshot(save_path)
@@ -61,6 +92,8 @@ def capture_screenshot(save_path="static/screenshots/last_screenshot.png"):
 
 def media_control(action):
     """Controls media playback (play/pause, next, prev)."""
+    if not HAS_PYAUTOGUI:
+        return "Media control is not supported in this environment."
     actions = {
         "play": "playpause",
         "pause": "playpause",
@@ -70,16 +103,26 @@ def media_control(action):
     }
     key = actions.get(action.lower())
     if key:
-        pyautogui.press(key)
-        return f"Media {action}ed."
+        try:
+            pyautogui.press(key)
+            return f"Media {action}ed."
+        except Exception as e:
+            return f"Media control error: {e}"
     return "Unknown media action."
 
 def power_control(action):
     """System power actions."""
-    if action == "lock":
-        ctypes.windll.user32.LockWorkStation()
-        return "System locked."
-    elif action == "hibernate":
-        os.system("shutdown /h")
-        return "Hibernating..."
+    if os.name != 'nt':
+        return f"Power action '{action}' is only supported on Windows."
+        
+    try:
+        if action == "lock":
+            import ctypes
+            ctypes.windll.user32.LockWorkStation()
+            return "System locked."
+        elif action == "hibernate":
+            os.system("shutdown /h")
+            return "Hibernating..."
+    except Exception as e:
+        return f"Power control error: {e}"
     return "Unknown power action."

@@ -3,16 +3,19 @@ flask-socketio
 requests
 python-dotenv
 langdetect
-pycaw
-screen-brightness-control
-pyautogui
 psutil
-comtypes
-pygame
-speechrecognition
-pyttsx3
-google-generativeai
 marked
 pymupdf
 gunicorn
 eventlet
+google-generativeai
+
+# Windows/Hardware Specific (Optional/Conditional)
+pycaw; sys_platform == 'win32'
+screen-brightness-control; sys_platform == 'win32'
+pyautogui; sys_platform == 'win32'
+comtypes; sys_platform == 'win32'
+pygame; sys_platform == 'win32'
+speechrecognition; sys_platform == 'win32'
+pyttsx3; sys_platform == 'win32'
+gTTS; sys_platform == 'win32'

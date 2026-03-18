@@ -3,18 +3,33 @@ import tempfile
 import threading
 import queue
 import time
-import win32com.client
-import pythoncom
-from gtts import gTTS
-import pygame
 
-# Initialize pygame mixer for Hindi/Audio playback
+# --- Hardware Dependent Imports ---
+HAS_PYGAME = False
 try:
+    import pygame
     pygame.mixer.init()
+    HAS_PYGAME = True
 except Exception as e:
-    print(f"[Speaker] Pygame mixer init failed: {e}")
+    print(f"[Speaker] Pygame mixer init failed/unavailable: {e}")
 
-# ... existing code ...
+HAS_GTTS = False
+try:
+    from gtts import gTTS
+    HAS_GTTS = True
+except ImportError:
+    print("[Speaker] gTTS not installed.")
+
+HAS_WIN32 = False
+try:
+    import win32com.client
+    import pythoncom
+    HAS_WIN32 = True
+except ImportError:
+    if os.name == 'nt':
+        print("[Speaker] pywin32 not found on Windows.")
+    else:
+        print("[Speaker] pywin32 skipped (non-Windows platform).")
 
 # Global Speech Queue
 speech_queue = queue.Queue()
@@ -23,6 +38,8 @@ speech_queue = queue.Queue()
 _sapi_speaker = None
 def get_sapi_speaker():
     global _sapi_speaker
+    if not HAS_WIN32:
+        return None
     if _sapi_speaker is None:
         try:
             pythoncom.CoInitialize()
@@ -38,6 +55,9 @@ def is_hindi(text):
     return False
 
 def _internal_speak_hindi(text):
+    if not HAS_GTTS or not HAS_PYGAME:
+        print(f"[Speaker] Skipping Hindi speech (libraries missing): {text[:50]}...")
+        return
     try:
         print(f"[Speaker] Speaking Hindi (gTTS): {text[:50]}...")
         if not pygame.mixer.get_init():
@@ -61,15 +81,15 @@ def _internal_speak_hindi(text):
         print(f"[Speaker] Hindi Error: {e}")
 
 def _internal_speak_english(text):
+    if not HAS_WIN32:
+        print(f"[Speaker] Skipping English speech (SAPI5 missing): {text[:50]}...")
+        return
     try:
         print(f"[Speaker] Speaking English (SAPI): {text[:50]}...")
         speaker = get_sapi_speaker()
         if speaker:
-            # 1 = SVSFlagsAsync (Make it non-blocking so we can interrupt it)
             speaker.Speak(text, 1)
-            # Wait for speech to finish or be interrupted
             while True:
-                # 0 = SVSPEndOfStream
                 if speaker.WaitUntilDone(100): 
                     break
             print("[Speaker] Finished speaking via SAPI.")
@@ -84,16 +104,16 @@ is_speaking_now = False
 def speech_worker():
     """Background worker that handles one speech task at a time."""
     global is_speaking_now
-    # Initialize COM for this thread
-    pythoncom.CoInitialize()
-    print("[Speaker] Worker thread started with COM init.")
+    if HAS_WIN32:
+        pythoncom.CoInitialize()
+    print("[Speaker] Worker thread started.")
+    
     while True:
         try:
             text = speech_queue.get()
-            if text is None: break # Shutdown signal
+            if text is None: break 
             
             is_speaking_now = True
-            # Remove asterisks and markdown before speaking
             clean_text = text.replace('*', '').replace('#', '')
             
             if is_hindi(clean_text):
@@ -114,19 +134,15 @@ worker_thread = threading.Thread(target=speech_worker, daemon=True)
 worker_thread.start()
 
 def speak(text):
-    """Adds a message to the speech queue. Non-blocking."""
     if not text: return
     speech_queue.put(text)
 
 def wait_until_finished():
-    """Blocks until the speech queue is empty and the worker is idle."""
     speech_queue.join()
     while is_speaking_now:
         time.sleep(0.1)
 
 def stop_speaking():
-    """Immediately stops any current speech and clears the queue."""
-    # 1. Clear the queue
     while not speech_queue.empty():
         try:
             speech_queue.get_nowait()
@@ -134,24 +150,20 @@ def stop_speaking():
         except queue.Empty:
             break
     
-    # 2. Stop Hindi (pygame)
-    try:
-        pygame.mixer.music.stop()
-    except:
-        pass
+    if HAS_PYGAME:
+        try:
+            pygame.mixer.music.stop()
+        except:
+            pass
         
-    # 3. Stop English (SAPI5 Purge)
-    try:
-        if _sapi_speaker:
-            # 2 = SVSFPurgeBeforeSpeak (Immediately stop and clear all pending speech)
+    if HAS_WIN32 and _sapi_speaker:
+        try:
             _sapi_speaker.Speak("", 2)
-    except:
-        pass
+        except:
+            pass
     
-    print("[Speaker] Audio stopped by user.")
+    print("[Speaker] Audio stopped.")
 
 if __name__ == "__main__":
-    speak("Hello, I am Jarvis. SAPI5 is now active.")
-    speak("नमस्ते, मैं जार्विस हूँ।")
+    speak("System check. Speaker module loaded.")
     time.sleep(2)
-    stop_speaking()

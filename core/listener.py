@@ -1,32 +1,42 @@
-import speech_recognition as sr
+# --- Hardware Dependent Imports ---
+HAS_SR = False
+try:
+    import speech_recognition as sr
+    HAS_SR = True
+except ImportError:
+    print("[Listener] speech_recognition not installed (skipping voice input).")
 
-recognizer = sr.Recognizer()
-recognizer.pause_threshold = 1.5      # stop after 1.5s of silence (instant but won't cut off mid-sentence)
-recognizer.energy_threshold = 300      # fixed sensitivity (lower = more sensitive)
-recognizer.dynamic_energy_threshold = False  # don't auto-adjust (was causing it to ignore voice)
+if HAS_SR:
+    recognizer = sr.Recognizer()
+    recognizer.pause_threshold = 1.5
+    recognizer.energy_threshold = 300
+    recognizer.dynamic_energy_threshold = False
+else:
+    recognizer = None
 
 def listen(timeout=None, phrase_time_limit=None):
-    with sr.Microphone() as source:
-        print(f"[Listener] Ready! (timeout={timeout}, phrase_limit={phrase_time_limit})")
-        try:
-            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
-            print("[Listener] Got audio, processing...")
-        except sr.WaitTimeoutError:
-            return None
-
+    if not HAS_SR:
+        return None
+        
     try:
+        with sr.Microphone() as source:
+            print(f"[Listener] Ready! (timeout={timeout}, phrase_limit={phrase_time_limit})")
+            try:
+                audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
+                print("[Listener] Got audio, processing...")
+            except sr.WaitTimeoutError:
+                return None
+
         text = recognizer.recognize_google(audio)
         print("You said:", text)
         return text.lower()
-    except sr.UnknownValueError:
-        print("Could not understand audio")
-        return None
-    except sr.RequestError:
-        print("Speech service error")
+    except Exception as e:
+        # Most likely PyAudio missing or microphone access error
+        print(f"[Listener] Speech recognition error: {e}")
         return None
 
-
-# Temporary testing block
 if __name__ == "__main__":
-    while True:
+    if HAS_SR:
         listen()
+    else:
+        print("Listener module loaded in no-op mode (no SR library).")
