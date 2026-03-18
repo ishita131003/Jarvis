@@ -161,7 +161,9 @@ def extract_text_from_pdf(base64_data):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', 
+                           supabase_url=os.environ.get('SUPABASE_URL', ''),
+                           supabase_key=os.environ.get('SUPABASE_ANON_KEY', ''))
 
 @app.route('/voice-mode')
 def voice_mode():

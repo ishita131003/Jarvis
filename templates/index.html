@@ -11,6 +11,7 @@
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         *,
         *::before,
@@ -1580,10 +1581,68 @@
             color: #fff;
             transform: scale(1.05);
         }
+        /* === AUTH OVERLAY === */
+        .auth-overlay {
+            position: fixed; inset: 0; background: rgba(5, 5, 16, 0.95);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 9999; display: none; align-items: center; justify-content: center;
+            flex-direction: column;
+        }
+
+        .auth-overlay.active { display: flex; }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; padding: 40px; text-align: center;
+            max-width: 400px; width: 90%; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: slideUpFade 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .auth-logo {
+            font-size: 2.2rem; font-weight: 800; letter-spacing: 5px;
+            background: linear-gradient(90deg, #fff, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 5px; text-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+
+        .auth-subtitle { color: var(--accent-cyan); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 30px; }
+        .auth-card h2 { color: #fff; margin-bottom: 10px; font-weight: 600; }
+        .auth-card p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 30px; }
+
+        .google-btn {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            width: 100%; padding: 12px; background: #fff; color: #3c4043;
+            border: 1px solid #dadce0; border-radius: 12px; font-size: 1rem;
+            font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.2s;
+        }
+        .google-btn:hover { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.1); }
+        .google-btn svg { width: 22px; height: 22px; }
+
+        .auth-error { color: #ef4444; margin-top: 15px; font-size: 0.85rem; display: none; }
+
+        body.light-theme .auth-overlay { background: rgba(248, 250, 252, 0.95); }
+        body.light-theme .auth-card { background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1); }
+        body.light-theme .auth-card h2 { color: #0f172a; }
+        body.light-theme .auth-logo { background: linear-gradient(90deg, #007AFF, #AF52DE); -webkit-background-clip: text; }
+        body.light-theme .google-btn { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     </style>
 </head>
 
 <body>
+    <!-- AUTH OVERLAY -->
+    <div id="authOverlay" class="auth-overlay active">
+        <div class="auth-card">
+            <div class="auth-logo">J.A.R.V.I.S.</div>
+            <div class="auth-subtitle">System Access</div>
+            <h2>Welcome Back</h2>
+            <p>Please authenticate to access the workspace.</p>
+            <button id="googleLoginBtn" class="google-btn">
+                <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+                Continue with Google
+            </button>
+            <p id="authErrorMsg" class="auth-error"></p>
+        </div>
+    </div>
 
     <div class="bg-grid"></div>
     <div class="bg-grid-2"></div>
@@ -1779,19 +1838,11 @@
                 <div class="data-card">
                     <div class="data-item">
                         <span class="data-label">Name</span>
-                        <span class="data-value">Tony Stark</span>
-                    </div>
-                    <div class="data-item">
-                        <span class="data-label">Phone</span>
-                        <span class="data-value">+1 (555) 0199</span>
+                        <span class="data-value" id="profileName">Loading...</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">Email</span>
-                        <span class="data-value">ironman@avengers.com</span>
-                    </div>
-                    <div class="data-item">
-                        <span class="data-label">Status</span>
-                        <span class="data-value" style="color: #00ff88;">Verified</span>
+                        <span class="data-value" id="profileEmail">Loading...</span>
                     </div>
                 </div>
             </div>
@@ -1808,18 +1859,83 @@
                 </div>
             </div>
 
-            <!-- Change AI Name -->
+            <!-- System Commands -->
             <div class="settings-section" style="margin-bottom: 0;">
-                <h3>System Identifier</h3>
-                <div class="rename-row">
+                <h3>System Identity</h3>
+                <div class="rename-row" style="margin-bottom: 15px;">
                     <input type="text" id="modalNameInput" class="rename-input" placeholder="e.g. J.A.R.V.I.S.">
                     <button id="modalSaveNameBtn" class="save-btn">Save</button>
                 </div>
+                <button id="signOutBtn" class="google-btn" style="border: 1px solid rgba(255, 68, 68, 0.3); color: #ff4444; background: rgba(255, 68, 68, 0.05);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Sign Out</button>
             </div>
         </div>
     </div>
 
     <script>
+        // === SUPABASE AUTHENTICATION ===
+        const SUPABASE_URL = "{{ supabase_url or '' }}";
+        const SUPABASE_ANON_KEY = "{{ supabase_key or '' }}";
+        
+        let supabase = null;
+        let currentUser = null;
+
+        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            console.warn("Supabase keys not found. Auth is disabled.");
+            document.getElementById('authOverlay').classList.remove('active');
+        }
+
+        async function checkSession() {
+            if (!supabase) return;
+            const { data: { session } } = await supabase.auth.getSession();
+            handleAuthChange(session);
+            
+            supabase.auth.onAuthStateChange((_event, session) => {
+                handleAuthChange(session);
+            });
+        }
+
+        function handleAuthChange(session) {
+            const authOverlay = document.getElementById('authOverlay');
+            if (session) {
+                currentUser = session.user;
+                authOverlay.classList.remove('active');
+                
+                // Update Settings Modal Profile Data
+                const fullName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+                document.getElementById('profileName').textContent = fullName;
+                document.getElementById('profileEmail').textContent = currentUser.email;
+            } else {
+                currentUser = null;
+                // Only show overlay if keys are actually provided
+                if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+                    authOverlay.classList.add('active');
+                }
+            }
+        }
+
+        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+            if (!supabase) {
+                document.getElementById('authErrorMsg').textContent = "Supabase is not configured. Add keys to Render environment variables.";
+                document.getElementById('authErrorMsg').style.display = 'block';
+                return;
+            }
+            const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+            if (error) {
+                document.getElementById('authErrorMsg').textContent = error.message;
+                document.getElementById('authErrorMsg').style.display = 'block';
+            }
+        });
+
+        document.getElementById('signOutBtn')?.addEventListener('click', async () => {
+            if (supabase) {
+                await supabase.auth.signOut();
+                document.getElementById('settingsOverlay').classList.remove('active');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', checkSession);
 
         // ===== SOCKET.IO =====
         const socket = io();
