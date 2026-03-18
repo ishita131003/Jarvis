@@ -1221,122 +1221,184 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* === PREMIUM LIGHT THEME === */
+        /* === ULTRA-PREMIUM LIGHT THEME (macOS / iOS Inspired) === */
         body.light-theme {
-            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
-            --bg-primary: #f0f4f8; 
+            /* Stunning, soft, multi-color mesh gradient background */
+            background: 
+                radial-gradient(at 0% 0%, hsla(210, 100%, 95%, 1) 0px, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(250, 100%, 96%, 1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(280, 100%, 95%, 1) 0px, transparent 50%),
+                #f4f7f6; /* Soft pearl base */
+            background-attachment: fixed;
+            
+            --bg-primary: transparent; 
             --bg-secondary: transparent; 
-            --bg-card: rgba(255, 255, 255, 0.75);
-            --border-glow: rgba(0, 119, 255, 0.15);
-            --text-primary: #1e293b; 
-            --text-secondary: #64748b;
-            --text-muted: #94a3b8;
-            --user-bubble: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.8));
-            --bot-bubble: linear-gradient(135deg, rgba(241, 245, 249, 0.8), rgba(226, 232, 240, 0.6));
-            --glass-border: 1px solid rgba(255, 255, 255, 0.6);
-            --neon-shadow: 0 8px 32px rgba(100, 116, 139, 0.15);
-            --glow-cyan: 0 5px 15px rgba(0, 119, 255, 0.15);
-            --accent-cyan: #0284c7; /* Sky blue */
-            --accent-blue: #2563eb; /* Royal blue */
-            --accent-purple: #9333ea;
-            --accent-pink: #db2777;
+            --bg-card: rgba(255, 255, 255, 0.65); /* Highly transparent for blur */
+            --border-glow: rgba(0, 122, 255, 0.1);
+            --text-primary: #111827; 
+            --text-secondary: #4b5563;
+            --text-muted: #9ca3af;
+            
+            /* iMessage style vibrant blue gradient for user */
+            --user-bubble: linear-gradient(135deg, #007AFF, #0056b3); 
+            /* Crisp clean white for bot */
+            --bot-bubble: rgba(255, 255, 255, 0.85);
+            
+            --glass-border: 1px solid rgba(255, 255, 255, 0.8);
+            --neon-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+            --glow-cyan: 0 8px 24px rgba(0, 122, 255, 0.15);
+            --accent-cyan: #007AFF; /* iOS Blue */
+            --accent-blue: #007AFF; 
+            --accent-purple: #AF52DE;
+            --accent-pink: #FF2D55;
         }
 
-        body.light-theme .bg-grid, body.light-theme .bg-grid-2 {
-            opacity: 0.6;
-            background-image:
-                linear-gradient(rgba(148, 163, 184, 0.15) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+        body.light-theme .bg-grid, body.light-theme .bg-grid-2, body.light-theme .scanlines { 
+            display: none !important; /* Remove harsh lines entirely for a clean aesthetic */
         }
 
-        body.light-theme .scanlines { display: none; } /* Disabled for cleaner light look */
-
-        /* Light Theme Panel Overrides */
+        /* Light Theme Panel Overrides (Heavy Glassmorphism) */
         body.light-theme .sidebar {
-            background: rgba(255, 255, 255, 0.65);
-            border-right: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 5px 0 25px rgba(100, 116, 139, 0.1);
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-right: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 1px 0 20px rgba(0, 0, 0, 0.03);
         }
 
         body.light-theme .navbar {
-            background: rgba(255, 255, 255, 0.65);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 4px 20px rgba(100, 116, 139, 0.05);
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
         }
 
         body.light-theme .stat-card {
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 8px 24px rgba(100, 116, 139, 0.08);
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+            border-radius: 20px;
         }
         
         body.light-theme .stat-card:hover {
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 12px 32px rgba(100, 116, 139, 0.12);
+            background: rgba(255, 255, 255, 0.85);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.08);
         }
 
         body.light-theme .input-wrapper {
-            background: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
             border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 10px 30px rgba(100, 116, 139, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+            border-radius: 24px; /* Soft round shape */
         }
 
         body.light-theme .input-wrapper:focus-within {
             background: rgba(255, 255, 255, 0.95);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 15px 40px rgba(2, 132, 199, 0.15);
+            border: 1px solid var(--accent-cyan);
+            box-shadow: 0 10px 40px rgba(0, 122, 255, 0.15);
         }
 
         body.light-theme .mic-btn, body.light-theme .send-btn, body.light-theme .attach-btn {
-            background: rgba(241, 245, 249, 0.8);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            color: var(--text-secondary);
+            background: #f3f4f6;
+            border: none;
+            color: #6b7280;
+            border-radius: 50%; /* Perfect circles */
+            width: 38px;
+            height: 38px;
         }
         
         body.light-theme .mic-btn:hover, body.light-theme .send-btn:hover, body.light-theme .attach-btn:hover {
-            background: rgba(2, 132, 199, 0.1);
-            border-color: var(--accent-cyan);
+            background: #eef2ff;
             color: var(--accent-cyan);
+            transform: scale(1.05);
         }
 
         body.light-theme .message.user {
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.05);
+            border: none;
+            color: #fff; /* White text on vivid blue background */
+            box-shadow: 0 5px 20px rgba(0, 122, 255, 0.25);
+            font-weight: 500;
         }
         
         body.light-theme .message.bot {
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.03);
-            background: var(--bot-bubble);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         body.light-theme .sidebar-logo-icon {
-            box-shadow: 0 0 15px rgba(2, 132, 199, 0.3);
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
+            background: linear-gradient(135deg, #00C6FF, #0072FF); /* Vibrant gradient */
+        }
+
+        body.light-theme .sidebar-item {
+            color: #4b5563;
+        }
+
+        body.light-theme .sidebar-item:hover {
+            background: rgba(0, 0, 0, 0.03);
+            color: #111827;
         }
 
         body.light-theme .sidebar-item.active {
-            background: rgba(2, 132, 199, 0.08);
+            background: #eef2ff;
             color: var(--accent-cyan);
+            font-weight: 600;
+            border-radius: 12px;
+        }
+        
+        body.light-theme .sidebar-item.active::before {
+            background: var(--accent-cyan);
+            width: 4px;
+            box-shadow: 0 0 10px var(--accent-cyan);
         }
 
         body.light-theme .settings-modal {
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(255, 255, 255, 1);
-            box-shadow: 0 20px 60px rgba(100, 116, 139, 0.2);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-radius: 24px;
         }
 
         body.light-theme .data-card, body.light-theme .toggle-row, body.light-theme .rename-input {
-            background: rgba(241, 245, 249, 0.8);
-            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
         }
 
         body.light-theme .rename-input:focus {
             background: #fff;
             border-color: var(--accent-cyan);
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+        }
+        
+        body.light-theme .save-btn {
+            background: var(--accent-cyan);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+            border-radius: 12px;
+        }
+        
+        body.light-theme .stop-audio-btn {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.1);
+            color: #64748b;
+        }
+        
+        body.light-theme .stop-audio-btn:hover {
+            background: #ffe4e6;
+            color: #e11d48;
+            border-color: #fda4af;
         }
 
 
