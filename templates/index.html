@@ -1916,15 +1916,34 @@
         }
 
         document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('googleLoginBtn');
+            const errorMsg = document.getElementById('authErrorMsg');
+            
+            errorMsg.style.display = 'none';
+            
             if (!supabase) {
-                document.getElementById('authErrorMsg').textContent = "Supabase is not configured. Add keys to Render environment variables.";
-                document.getElementById('authErrorMsg').style.display = 'block';
+                errorMsg.textContent = "Supabase is not configured. Add keys to .env or environment variables.";
+                errorMsg.style.display = 'block';
                 return;
             }
-            const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-            if (error) {
-                document.getElementById('authErrorMsg').textContent = error.message;
-                document.getElementById('authErrorMsg').style.display = 'block';
+            
+            try {
+                btn.innerHTML = 'Connecting...';
+                
+                const { data, error } = await supabase.auth.signInWithOAuth({ 
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin
+                    }
+                });
+                
+                if (error) throw error;
+                
+            } catch (err) {
+                console.error("[Supabase Auth Error]", err);
+                btn.innerHTML = 'Continue with Google';
+                errorMsg.textContent = err.message || "Failed to connect to Supabase. Check your keys and network.";
+                errorMsg.style.display = 'block';
             }
         });
 
