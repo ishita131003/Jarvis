@@ -1,6 +1,6 @@
 # 🤖 J.A.R.V.I.S. — Advanced AI Assistant
 
-J.A.R.V.I.S. (Just A Rather Very Intelligent System) is a powerful, multimodal AI assistant designed for seamless interaction via voice, text, vision, and document analysis.
+J.A.R.V.I.S. is a powerful, multimodal AI assistant designed for seamless interaction via voice, text, vision, and document analysis.
 
 ---
 
@@ -10,7 +10,7 @@ J.A.R.V.I.S. (Just A Rather Very Intelligent System) is a powerful, multimodal A
 - **Voice Recognition**: Real-time voice commands with wake-word support.
 - **Bi-lingual TTS**: Crystal clear speech synthesis in both English and Hindi.
 - **Vision Support**: Attach images for instant AI analysis and description.
-- **PDF Analysis [NEW]**: Upload PDF documents for intelligent text extraction and contextual querying.
+- **PDF Analysis**: Upload PDF documents for intelligent text extraction and contextual querying.
 
 ### 🖥️ High-End UI/UX
 - **Integrated Compose HUD**: Beautifully redesigned input box with embedded file previews (Images & PDFs) stacked above text entry.
@@ -19,7 +19,7 @@ J.A.R.V.I.S. (Just A Rather Very Intelligent System) is a powerful, multimodal A
 - **Live Telemetry**: Real-time monitoring of system stats (CPU, RAM, Battery, Brightness) directly in the interface.
 
 ### ⚡ Developer & Power Features
-- **Hot-Reload (`Ctrl + Shift + R`) [NEW]**: Instantly refresh the frontend and restart the backend without losing state.
+- **Hot-Reload (`Ctrl + Shift + R`) **: Instantly refresh the frontend and restart the backend without losing state.
 - **Web Search Integration**: JARVIS can browse the live web to provide up-to-date answers using DuckDuckGo.
 - **System Control**: Execute commands like opening applications, checking status, and more.
 
@@ -70,5 +70,3 @@ The application will be available at `http://localhost:5001`.
 
 ---
 
-## 📄 License
-Custom Project for Educational/Personal Use.
