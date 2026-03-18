@@ -292,11 +292,7 @@ def process_input(user_input, file_data=None, file_type='image'):
         if len(CHAT_HISTORY) > 20:
             del CHAT_HISTORY[:2]
 
-        socketio.emit('status', {'state': 'speaking', 'message': 'Speaking...'})
-        if not IS_MUTED:
-            speak(response)
-        else:
-            print("[Speaker] Muted. Skipping audio.")
+        # The frontend (JavaScript) now handles TTS via SpeechSynthesis
         socketio.emit('status', {'state': 'idle', 'message': 'Ready.'})
     except Exception as e:
         print(f"[ERROR] process_input crashed: {e}", flush=True)

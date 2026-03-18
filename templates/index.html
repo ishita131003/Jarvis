@@ -1424,6 +1424,95 @@
         const thinkingIndicator = document.getElementById('thinkingIndicator');
 
         let isListening = false;
+        let isMuted = false;
+
+        // ===== WEB SPEECH API (Voice Architecture) =====
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+            recognition.onstart = () => {
+                isListening = true;
+                micBtn.classList.add('active');
+                statusText.textContent = "Listening...";
+                statusText.className = 'status-text listening';
+                orb.classList.add('listening');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                textInput.value = transcript;
+                sendText();
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                stopListeningUI();
+            };
+
+            recognition.onend = () => {
+                stopListeningUI();
+            };
+        } else {
+            console.warn("Speech Recognition API not supported in this browser.");
+        }
+
+        function stopListeningUI() {
+            isListening = false;
+            micBtn.classList.remove('active');
+            statusText.textContent = "Ready.";
+            statusText.className = 'status-text idle';
+            orb.classList.remove('listening');
+        }
+
+        // --- Text-To-Speech (TTS) Engine ---
+        function speakText(text) {
+            if (isMuted || !window.speechSynthesis) return;
+            
+            window.speechSynthesis.cancel(); // Stop current speech
+            
+            // Clean markdown for speech
+            const cleanText = text.replace(/[*#_`]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Detect Hindi vs English
+            const isHindi = /[\u0900-\u097F]/.test(cleanText);
+            utterance.lang = isHindi ? 'hi-IN' : 'en-US';
+            
+            // Try to set a voice if loaded
+            const setVoice = () => {
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    // Try to find a good voice (like Google UK Female or a Hindi voice)
+                    let targetVoice = voices.find(v => v.lang.startsWith(isHindi ? 'hi' : 'en') && (v.name.includes('Google') || v.name.includes('Female')));
+                    if (!targetVoice) targetVoice = voices.find(v => v.lang.startsWith(isHindi ? 'hi' : 'en'));
+                    if (targetVoice) utterance.voice = targetVoice;
+                }
+            };
+            setVoice();
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = setVoice;
+            }
+
+            utterance.onstart = () => {
+                orb.classList.add('speaking');
+                statusText.textContent = "Speaking...";
+                statusText.className = 'status-text speaking';
+            };
+
+            utterance.onend = () => {
+                orb.classList.remove('speaking');
+                statusText.textContent = "Ready.";
+                statusText.className = 'status-text idle';
+            };
+            
+            utterance.onerror = () => utterance.onend();
+
+            window.speechSynthesis.speak(utterance);
+        }
 
         // --- Status Updates ---
         socket.on('status', (data) => {
@@ -1457,6 +1546,7 @@
         socket.on('bot_message', (data) => {
             thinkingIndicator.classList.remove('active');
             addMessage(data.text, 'bot');
+            speakText(data.text); // Speak the message in the browser
         });
 
         // Configure marked for safe, clean output
@@ -1495,7 +1585,10 @@
                     </svg>
                     <span>MUTE</span>
                 `;
-                stopBtn.onclick = () => socket.emit('stop_audio');
+                stopBtn.onclick = () => {
+                    window.speechSynthesis.cancel();
+                    socket.emit('stop_audio'); // Keep for backward compatibility if needed
+                };
                 msg.appendChild(stopBtn);
             } else {
                 // User messages: text + optional file (image/pdf)
@@ -1543,15 +1636,19 @@
 
         // --- Mic Button ---
         micBtn.addEventListener('click', () => {
-            if (!isListening) {
-                socket.emit('start_listening');
+            if (!isListening && recognition) {
+                recognition.start();
+            } else if (isListening && recognition) {
+                recognition.stop();
+            } else if (!recognition) {
+                alert("Voice recognition is not supported in this browser.");
             }
         });
 
         // Orb also triggers listening
         orb.addEventListener('click', () => {
-            if (!isListening) {
-                socket.emit('start_listening');
+            if (!isListening && recognition) {
+                recognition.start();
             }
         });
 
@@ -1686,8 +1783,7 @@
         const telemetryToggle = document.getElementById('telemetryToggle');
         const telemetryDropdown = document.getElementById('telemetryDropdown');
         const globalMuteBtn = document.getElementById('globalMuteBtn');
-        const muteIcon = document.getElementById('muteIcon');
-        let isMuted = false;
+        // Rename logic
 
         // Rename logic
         const navLogo = document.getElementById('navLogo');
