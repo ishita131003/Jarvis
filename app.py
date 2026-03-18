@@ -270,4 +270,4 @@ if __name__ == '__main__':
     print("🚀 Starting Jarvis Web Interface...")
     print("🌐 Open http://localhost:5001 in your browser")
     webbrowser.open('http://localhost:5001')
-    socketio.run(app, host='0.0.0.0', port=5001, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=5001, debug=True, allow_unsafe_werkzeug=True)

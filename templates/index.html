@@ -1192,12 +1192,12 @@
                         <span>System Information</span>
                     </button>
                     <!-- Global Mute Button -->
-                    <button class="nav-btn" id="globalMuteBtn" title="Toggle Global Mute">
+                    <!-- <button class="nav-btn" id="globalMuteBtn" title="Toggle Global Mute">
                         <svg id="muteIcon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                             <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                         </svg>
                         <span>Mute</span>
-                    </button>
+                    </button> -->
                   <!-- Replace Audio with Voice Chat -->
             <button class="nav-btn" id="voiceChatBtn" title="Start Voice Chat (Call)">
                 <svg viewBox="0 0 24 24"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
@@ -1572,29 +1572,43 @@
             telemetryToggle.classList.toggle('active');
         });
 
-        // Global Mute Toggle
-        globalMuteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isMuted = !isMuted;
-            globalMuteBtn.classList.toggle('active', isMuted); // Highlighting when muted
-            socket.emit('toggle_mute', { muted: isMuted });
-            
-            if (isMuted) {
-                muteIcon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
-                globalMuteBtn.style.color = 'var(--accent-pink)';
-                globalMuteBtn.style.borderColor = 'var(--accent-pink)';
-            } else {
-                muteIcon.innerHTML = '<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>';
-                globalMuteBtn.style.color = 'var(--accent-cyan)';
-                globalMuteBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-            }
-        });
+        // Global Mute Toggle (Defensive check in case it's commented out in HTML)
+        if (globalMuteBtn) {
+            globalMuteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isMuted = !isMuted;
+                globalMuteBtn.classList.toggle('active', isMuted); // Highlighting when muted
+                socket.emit('toggle_mute', { muted: isMuted });
+                
+                if (muteIcon) {
+                    if (isMuted) {
+                        muteIcon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+                        globalMuteBtn.style.color = 'var(--accent-pink)';
+                        globalMuteBtn.style.borderColor = 'var(--accent-pink)';
+                    } else {
+                        muteIcon.innerHTML = '<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>';
+                        globalMuteBtn.style.color = 'var(--accent-cyan)';
+                        globalMuteBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    }
+                }
+            });
+        }
 
         // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
             if (!telemetryDropdown.contains(e.target) && !telemetryToggle.contains(e.target)) {
                 telemetryDropdown.classList.remove('active');
                 telemetryToggle.classList.remove('active');
+            }
+        });
+
+        // --- Hot Reload Shortcut (Ctrl + Shift + R) ---
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
+                console.log("[Shortcut] Reloading application...");
+                socket.emit('stop_audio'); // Ensure speaker stops before reload
+                // Standard browser behavior for Ctrl+Shift+R is Hard Reload.
+                // We let it happen naturally while sending the stop signal.
             }
         });
 

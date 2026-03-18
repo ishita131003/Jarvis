@@ -242,6 +242,14 @@
         window.onresize = resize;
         resize();
         animate();
+
+        // --- Hot Reload Shortcut (Ctrl + Shift + R) ---
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
+                console.log("[Shortcut] Reloading voice mode...");
+                socket.emit('stop_audio'); // Ensure speaker stops before reload
+            }
+        });
     </script>
 </body>
 </html>
