@@ -65,8 +65,13 @@ def _internal_speak_english(text):
         print(f"[Speaker] Speaking English (SAPI): {text[:50]}...")
         speaker = get_sapi_speaker()
         if speaker:
-            # 0 = Default (Synchronous)
-            speaker.Speak(text)
+            # 1 = SVSFlagsAsync (Make it non-blocking so we can interrupt it)
+            speaker.Speak(text, 1)
+            # Wait for speech to finish or be interrupted
+            while True:
+                # 0 = SVSPEndOfStream
+                if speaker.WaitUntilDone(100): 
+                    break
             print("[Speaker] Finished speaking via SAPI.")
         else:
             print("[Speaker] SAPI speaker not initialized!")
@@ -138,8 +143,8 @@ def stop_speaking():
     # 3. Stop English (SAPI5 Purge)
     try:
         if _sapi_speaker:
-            # 1 = SVSFPurgeBeforeSpeak
-            _sapi_speaker.Speak("", 1)
+            # 2 = SVSFPurgeBeforeSpeak (Immediately stop and clear all pending speech)
+            _sapi_speaker.Speak("", 2)
     except:
         pass
     
