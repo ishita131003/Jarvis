@@ -1,6 +1,10 @@
 import sys
 import site
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file for local development
+load_dotenv()
 
 # --- Production WSGI Server Patch ---
 # Required for Render.com to prevent "RLock(s) were not greened" errors 
