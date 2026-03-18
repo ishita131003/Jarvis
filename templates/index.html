@@ -1244,21 +1244,13 @@
             </div>
             
             <div class="sidebar-nav">
-                <div class="sidebar-item active">
-                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    <span>Images</span>
+                <div class="sidebar-item active" id="newChatBtn">
+                    <svg viewBox="0 0 24 24" style="fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>New Chat</span>
                 </div>
-                <div class="sidebar-item">
-                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <span>Documents</span>
-                </div>
-                <div class="sidebar-item">
-                    <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                    <span>Code</span>
-                </div>
-                <div class="sidebar-item">
-                    <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                    <span>Projects</span>
+                <div class="sidebar-item" id="myStuffBtn">
+                    <svg viewBox="0 0 24 24" style="fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    <span>My Stuff</span>
                 </div>
             </div>
             
@@ -1925,6 +1917,17 @@
                 // Add active class to clicked item
                 this.classList.add('active');
             });
+        });
+
+        // Specific Button Actions
+        document.getElementById('newChatBtn')?.addEventListener('click', () => {
+             // Basic implementation: reload the page to clear state
+             window.location.reload();
+        });
+
+        document.getElementById('myStuffBtn')?.addEventListener('click', () => {
+             // Placeholder for now
+             console.log("My Stuff clicked");
         });
 
         // --- Initialize ---
