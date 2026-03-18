@@ -1220,6 +1220,212 @@
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* === LIGHT THEME === */
+        body.light-theme {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --border-glow: rgba(0, 119, 255, 0.2);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --user-bubble: linear-gradient(135deg, rgba(226, 232, 240, 0.9), rgba(241, 245, 249, 0.9));
+            --bot-bubble: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
+            --glass-border: 1px solid rgba(0, 0, 0, 0.08);
+            --neon-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            --glow-cyan: 0 5px 15px rgba(0, 119, 255, 0.15);
+            --accent-cyan: #0077ff;
+            --accent-blue: #2563eb;
+        }
+
+        body.light-theme .bg-grid, body.light-theme .bg-grid-2 {
+            opacity: 0.8;
+            background-image:
+                linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+        }
+
+        body.light-theme .scanlines { opacity: 0.1; }
+
+        /* === SETTINGS MODAL === */
+        .settings-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .settings-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .settings-modal {
+            width: 90%;
+            max-width: 500px;
+            background: var(--bg-card);
+            border: var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--neon-shadow);
+            transform: translateY(20px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: var(--text-primary);
+        }
+
+        .settings-overlay.active .settings-modal {
+            transform: translateY(0);
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(150, 150, 150, 0.2);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .settings-header h2 {
+            font-size: 1.5rem;
+            color: var(--accent-cyan);
+            letter-spacing: 1px;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover { color: var(--accent-pink); }
+
+        .settings-section {
+            margin-bottom: 25px;
+        }
+
+        .settings-section h3 {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .data-card {
+            background: rgba(150, 150, 150, 0.05);
+            border: 1px solid rgba(150, 150, 150, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .data-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .data-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .data-value {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(150, 150, 150, 0.05);
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(150, 150, 150, 0.1);
+        }
+
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-cyan); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .rename-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .rename-input {
+            flex: 1;
+            background: rgba(150, 150, 150, 0.05);
+            border: 1px solid rgba(150, 150, 150, 0.2);
+            color: var(--text-primary);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .rename-input:focus { border-color: var(--accent-cyan); }
+
+        .save-btn {
+            background: var(--accent-cyan);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .save-btn:hover {
+            background: var(--accent-blue);
+            color: #fff;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 
@@ -1255,7 +1461,7 @@
             </div>
             
             <div class="sidebar-footer">
-                <div class="sidebar-item settings">
+                <div class="sidebar-item settings" id="openSettingsBtn">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     <span>Settings</span>
                 </div>
@@ -1401,6 +1607,62 @@
             </div>
         </div>
     </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-modal" id="settingsModal">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="close-btn" id="closeSettingsBtn">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <!-- Profile Data (Placeholder for Auth) -->
+            <div class="settings-section">
+                <h3>Personal Data</h3>
+                <div class="data-card">
+                    <div class="data-item">
+                        <span class="data-label">Name</span>
+                        <span class="data-value">Tony Stark</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Phone</span>
+                        <span class="data-value">+1 (555) 0199</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Email</span>
+                        <span class="data-value">ironman@avengers.com</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Status</span>
+                        <span class="data-value" style="color: #00ff88;">Verified</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme Toggle -->
+            <div class="settings-section">
+                <h3>Appearance</h3>
+                <div class="toggle-row">
+                    <span>Light Mode</span>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="themeToggleCheckbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Change AI Name -->
+            <div class="settings-section" style="margin-bottom: 0;">
+                <h3>System Identifier</h3>
+                <div class="rename-row">
+                    <input type="text" id="modalNameInput" class="rename-input" placeholder="e.g. J.A.R.V.I.S.">
+                    <button id="modalSaveNameBtn" class="save-btn">Save</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1928,6 +2190,58 @@
         document.getElementById('myStuffBtn')?.addEventListener('click', () => {
              // Placeholder for now
              console.log("My Stuff clicked");
+        });
+
+        // --- Settings Modal & Theme Logic ---
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const openSettingsBtn = document.getElementById('openSettingsBtn');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const themeToggleCheckbox = document.getElementById('themeToggleCheckbox');
+        const modalNameInput = document.getElementById('modalNameInput');
+        const modalSaveNameBtn = document.getElementById('modalSaveNameBtn');
+
+        if (openSettingsBtn) {
+            openSettingsBtn.addEventListener('click', () => {
+                settingsOverlay.classList.add('active');
+                modalNameInput.value = localStorage.getItem('jarvis_name') || 'J.A.R.V.I.S.';
+            });
+        }
+
+        closeSettingsBtn.addEventListener('click', () => {
+             settingsOverlay.classList.remove('active');
+        });
+
+        settingsOverlay.addEventListener('click', (e) => {
+             if (e.target === settingsOverlay) {
+                  settingsOverlay.classList.remove('active');
+             }
+        });
+
+        // Load correct theme on startup
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'light') {
+             document.body.classList.add('light-theme');
+             themeToggleCheckbox.checked = true;
+        }
+
+        // Toggle theme listener
+        themeToggleCheckbox.addEventListener('change', () => {
+             if (themeToggleCheckbox.checked) {
+                  document.body.classList.add('light-theme');
+                  localStorage.setItem('theme', 'light');
+             } else {
+                  document.body.classList.remove('light-theme');
+                  localStorage.setItem('theme', 'dark');
+             }
+        });
+
+        // Save AI Name from Modal
+        modalSaveNameBtn.addEventListener('click', () => {
+             const newName = modalNameInput.value.trim();
+             if (newName) {
+                  updateAIName(newName);
+             }
+             settingsOverlay.classList.remove('active');
         });
 
         // --- Initialize ---
