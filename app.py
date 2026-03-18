@@ -2,6 +2,15 @@ import sys
 import site
 import os
 
+# --- Production WSGI Server Patch ---
+# Required for Render.com to prevent "RLock(s) were not greened" errors 
+# when using gunicorn + eventlet + flask_socketio
+try:
+    import eventlet
+    eventlet.monkey_patch()
+except ImportError:
+    pass
+
 # Defensive: Ensure user-site-packages are in path for Windows
 user_site = site.getusersitepackages()
 if user_site not in sys.path:
