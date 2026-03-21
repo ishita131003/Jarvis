@@ -173,81 +173,146 @@
         const orbWrapper = document.getElementById('orbWrapper');
         const endCallBtn = document.getElementById('endCallBtn');
 
+        let recognition = null;
+        let isListening = false;
+        let isSpeaking = false;
+        let shouldListenAgain = true;
+
+        if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRec();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                isListening = true;
+                statusLabel.innerText = "Listening...";
+                orbWrapper.className = 'orb-container listening';
+            };
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                console.log("User said:", text);
+                statusLabel.innerText = "Thinking...";
+                orbWrapper.className = 'orb-container thinking';
+                socket.emit('send_message', { text: text });
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                if (event.error === 'not-allowed') {
+                    shouldListenAgain = false;
+                    statusLabel.innerText = "Mic blocked";
+                }
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                if (!isSpeaking && shouldListenAgain && orbWrapper.className.indexOf('thinking') === -1) {
+                    setTimeout(() => { try { recognition.start(); } catch(e){} }, 500);
+                }
+            };
+        } else {
+            statusLabel.innerText = "Voice not supported";
+        }
+
+        function speakText(text) {
+            if (!window.speechSynthesis) return;
+            isSpeaking = true;
+            if (isListening && recognition) recognition.stop();
+            window.speechSynthesis.cancel(); 
+            
+            const cleanText = text.replace(/[*#_`]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            const isHindi = /[\u0900-\u097F]/.test(cleanText);
+            utterance.lang = isHindi ? 'hi-IN' : 'en-US';
+            
+            const setVoice = () => {
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    let targetVoice = voices.find(v => v.lang.startsWith(isHindi ? 'hi' : 'en') && (v.name.includes('Google') || v.name.includes('Female')));
+                    if (!targetVoice) targetVoice = voices.find(v => v.lang.startsWith(isHindi ? 'hi' : 'en'));
+                    if (targetVoice) utterance.voice = targetVoice;
+                }
+            };
+            setVoice();
+            
+            utterance.onstart = () => {
+                statusLabel.innerText = "Jarvis speaking...";
+                orbWrapper.className = 'orb-container speaking';
+            };
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                if (shouldListenAgain && !isListening && recognition) {
+                     statusLabel.innerText = "Ready";
+                     orbWrapper.className = 'orb-container';
+                     setTimeout(() => { try { recognition.start(); } catch(e){} }, 500);
+                }
+            };
+
+            utterance.onerror = () => utterance.onend();
+            window.speechSynthesis.speak(utterance);
+        }
+
         socket.on('connect', () => {
             console.log('Connected to JARVIS');
-            socket.emit('start_voice_mode');
+            statusLabel.innerText = "Connecting...";
+            setTimeout(() => {
+                if(recognition && !isListening && !isSpeaking) {
+                    statusLabel.innerText = "Ready";
+                    try { recognition.start(); } catch(e){}
+                }
+            }, 1000);
         });
 
-        socket.on('voice_status', (data) => {
-            statusLabel.innerText = data.status;
-            
-            orbWrapper.className = 'orb-container';
-            if (data.mode === 'listening') {
-                orbWrapper.classList.add('listening');
-            } else if (data.mode === 'speaking') {
-                orbWrapper.classList.add('speaking');
-            } else if (data.mode === 'thinking') {
-                orbWrapper.classList.add('thinking');
+        socket.on('bot_message', (data) => {
+            speakText(data.text);
+        });
+
+        socket.on('status', (data) => {
+            if(data.state === 'idle' && !isSpeaking && !isListening) {
+                 statusLabel.innerText = "Ready";
+                 orbWrapper.className = 'orb-container';
+                 if(recognition && shouldListenAgain) {
+                     setTimeout(() => { try { recognition.start(); } catch(e){} }, 500);
+                 }
+            } else if (data.state === 'thinking') {
+                 statusLabel.innerText = "Thinking...";
+                 orbWrapper.className = 'orb-container thinking';
             }
         });
 
         endCallBtn.onclick = () => {
+            shouldListenAgain = false;
+            if(recognition) recognition.stop();
+            if(window.speechSynthesis) window.speechSynthesis.cancel();
             window.location.href = '/';
         };
 
-        // Simple star particles
+        // Particles
         const canvas = document.createElement('canvas');
         document.getElementById('particles').appendChild(canvas);
         const ctx = canvas.getContext('2d');
         let particles = [];
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         class Particle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2;
-                this.speed = Math.random() * 0.5 + 0.1;
-            }
-            update() {
-                this.y -= this.speed;
-                if (this.y < 0) this.reset();
-            }
-            draw() {
-                ctx.fillStyle = 'rgba(0, 210, 255, 0.5)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
+            constructor() { this.reset(); }
+            reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.size = Math.random() * 2; this.speed = Math.random() * 0.5 + 0.1; }
+            update() { this.y -= this.speed; if (this.y < 0) this.reset(); }
+            draw() { ctx.fillStyle = 'rgba(0, 210, 255, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
         }
-
         for (let i = 0; i < 100; i++) particles.push(new Particle());
-
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
+            particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(animate);
         }
+        window.onresize = resize; resize(); animate();
 
-        window.onresize = resize;
-        resize();
-        animate();
-
-        // --- Hot Reload Shortcut (Ctrl + Shift + R) ---
         window.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
-                console.log("[Shortcut] Reloading voice mode...");
-                socket.emit('stop_audio'); // Ensure speaker stops before reload
+                if(window.speechSynthesis) window.speechSynthesis.cancel();
             }
         });
     </script>
