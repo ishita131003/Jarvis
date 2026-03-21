@@ -3,7 +3,7 @@ Web search module for Jarvis — fetches real-time results via DuckDuckGo.
 Uses `ddgs` package (no API key needed).
 """
 
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 
 # Keywords that trigger a web search for real-time data
 REALTIME_TRIGGERS = [

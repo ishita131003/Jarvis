@@ -9,6 +9,7 @@ pymupdf
 gunicorn
 eventlet
 google-generativeai
+duckduckgo-search
 
 # Windows/Hardware Specific (Optional/Conditional)
 pycaw; sys_platform == 'win32'
