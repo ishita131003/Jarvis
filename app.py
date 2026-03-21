@@ -1,5 +1,8 @@
-import eventlet
-eventlet.monkey_patch()
+try:
+    import eventlet
+    eventlet.monkey_patch()
+except ImportError:
+    pass
 
 import sys
 import site
@@ -32,7 +35,7 @@ import fitz  # PyMuPDF
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'jarvis-secret-key'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Global chat history to keep context (max 20 messages)
 CHAT_HISTORY = []

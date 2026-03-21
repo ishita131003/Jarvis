@@ -159,16 +159,19 @@ def ask_ai(question: str, lang: str = "en", search_context: str = "", history: l
 
     # 2. TRUE PERSISTENCE: OpenRouter Loop
     pass_num = 1
-    while True:
+    max_passes = 2
+    while pass_num <= max_passes:
         print(f"[AI] Attempting Pass {pass_num} of all OpenRouter models...")
         result = _openrouter_call(messages, tokens, pass_num=pass_num)
         if result:
             return result
         
-        # Exponential backoff between passes
-        wait_time = min(60, 10 + (pass_num * 5))
-        print(f"[AI] All models busy. Retrying in {wait_time}s... (Keep waiting, Jarvis will find a way)")
+        if pass_num == max_passes:
+            break
+            
+        wait_time = min(5, (pass_num * 2))
+        print(f"[AI] All models busy. Retrying in {wait_time}s...")
         time.sleep(wait_time)
         pass_num += 1
 
-    return result
+    return "I'm having trouble connecting to my neural network right now. Please check if your OpenRouter API key is active or if there's a temporary outage."
