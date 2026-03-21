@@ -7,206 +7,183 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        :root {
-            --bg-color: #050505;
-            --accent-color: #00d2ff;
-            --text-color: #ffffff;
-            --danger-color: #ff4b2b;
-        }
-        body { margin: 0; padding: 0; background: var(--bg-color); color: var(--text-color); font-family: 'Outfit', sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        :root { --accent: #00d2ff; --danger: #ff4b2b; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #050505; color: #fff; font-family: 'Outfit', sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        #particles { position: fixed; inset: 0; z-index: 0; }
         .container { text-align: center; z-index: 10; }
-        .orb-container { position: relative; width: 300px; height: 300px; margin: 0 auto 50px; }
-        .orb { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, var(--accent-color) 0%, rgba(0, 210, 255, 0.2) 70%, transparent 100%); box-shadow: 0 0 50px var(--accent-color); animation: pulse 2s infinite ease-in-out; position: relative; cursor: pointer; }
-        .orb::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 80%; border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 50%; animation: rotate 10s linear infinite; }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 50px var(--accent-color); } 50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 100px var(--accent-color); } 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 50px var(--accent-color); } }
-        @keyframes rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-        .status { font-size: 1.5rem; font-weight: 300; letter-spacing: 2px; margin-bottom: 30px; height: 2rem; color: var(--accent-color); text-transform: uppercase; }
-        .end-call-btn { background: rgba(255, 75, 43, 0.1); border: 1px solid var(--danger-color); color: var(--danger-color); padding: 15px 40px; font-size: 1rem; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; margin: 0 auto; }
-        .end-call-btn:hover { background: var(--danger-color); color: white; box-shadow: 0 0 20px var(--danger-color); }
-        .end-call-btn svg { width: 20px; height: 20px; fill: currentColor; }
-        #particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        .listening .orb { background: radial-gradient(circle, #00ff88 0%, rgba(0, 255, 136, 0.2) 70%, transparent 100%); box-shadow: 0 0 80px #00ff88; }
-        .speaking .orb { animation: speaking-pulse 0.5s infinite ease-in-out; }
-        .thinking .orb { background: radial-gradient(circle, #ffcc00 0%, rgba(255, 204, 0, 0.2) 70%, transparent 100%); box-shadow: 0 0 80px #ffcc00; animation: thinking-pulse 1s infinite ease-in-out; }
-        @keyframes thinking-pulse { 0% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.5; } }
-        @keyframes speaking-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .orb-wrap { width: 260px; height: 260px; margin: 0 auto 40px; position: relative; cursor: pointer; }
+        .orb { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, var(--accent) 0%, rgba(0,210,255,.15) 70%, transparent 100%); box-shadow: 0 0 60px var(--accent); animation: pulse 2.5s ease-in-out infinite; transition: all .3s; }
+        .orb-wrap.listening .orb { background: radial-gradient(circle,#00ff88 0%,rgba(0,255,136,.15) 70%,transparent 100%); box-shadow: 0 0 80px #00ff88; animation: pulse-fast 1s ease-in-out infinite; }
+        .orb-wrap.speaking .orb { background: radial-gradient(circle,var(--accent) 0%,rgba(0,210,255,.3) 70%,transparent 100%); box-shadow: 0 0 100px var(--accent); animation: pulse-fast .5s ease-in-out infinite; }
+        .orb-wrap.thinking .orb { background: radial-gradient(circle,#ffcc00 0%,rgba(255,204,0,.15) 70%,transparent 100%); box-shadow: 0 0 80px #ffcc00; animation: pulse 1s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.05);opacity:1} }
+        @keyframes pulse-fast { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+        .status { font-size: 1.3rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 35px; color: var(--accent); text-transform: uppercase; min-height: 2rem; }
+        .tap-hint { font-size: 0.75rem; color: rgba(0,210,255,.5); letter-spacing: 2px; margin-bottom: 20px; text-transform: uppercase; }
+        .end-btn { background: rgba(255,75,43,.1); border: 1px solid var(--danger); color: var(--danger); padding: 14px 40px; font-size: 1rem; border-radius: 50px; cursor: pointer; transition: all .3s; text-transform: uppercase; letter-spacing: 2px; display: inline-flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; }
+        .end-btn:hover { background: var(--danger); color: #fff; box-shadow: 0 0 20px var(--danger); }
+        .end-btn svg { width: 18px; height: 18px; fill: currentColor; }
     </style>
 </head>
 <body>
     <div id="particles"></div>
     <div class="container">
-        <div class="orb-container" id="orbWrapper">
-            <div class="orb" id="jarvisOrb"></div>
+        <div class="orb-wrap" id="orbWrap">
+            <div class="orb"></div>
         </div>
-        <div class="status" id="statusLabel">TAP ORB TO START</div>
-        <button class="end-call-btn" id="endCallBtn">
-            <svg viewBox="0 0 24 24"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
+        <div class="status" id="status">Tap orb to start</div>
+        <div class="tap-hint" id="hint">tap once · then just speak</div>
+        <button class="end-btn" id="endBtn">
+            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
             End Call
         </button>
     </div>
 
     <script>
-        const socket = io();
-        const statusLabel = document.getElementById('statusLabel');
-        const orbWrapper = document.getElementById('orbWrapper');
-        const endCallBtn = document.getElementById('endCallBtn');
+    const socket = io();
+    const orbWrap = document.getElementById('orbWrap');
+    const statusEl = document.getElementById('status');
+    const hintEl = document.getElementById('hint');
+    const endBtn = document.getElementById('endBtn');
 
-        // === Clean State Machine ===
-        // States: IDLE | LISTENING | PROCESSING | SPEAKING
-        let STATE = 'IDLE';
-        let recognition = null;
-        let shouldRun = true;
+    let STATE = 'IDLE';   // IDLE | LISTENING | PROCESSING | SPEAKING
+    let recognition = null;
+    let active = false;   // becomes true after first orb tap
 
-        function setState(newState) {
-            STATE = newState;
-            console.log('[Voice] State ->', newState);
-            orbWrapper.className = 'orb-container';
-            if (newState === 'LISTENING') {
-                statusLabel.innerText = 'Listening...';
-                orbWrapper.classList.add('listening');
-            } else if (newState === 'PROCESSING') {
-                statusLabel.innerText = 'Thinking...';
-                orbWrapper.classList.add('thinking');
-            } else if (newState === 'SPEAKING') {
-                statusLabel.innerText = 'Jarvis speaking...';
-                orbWrapper.classList.add('speaking');
-            } else {
-                statusLabel.innerText = 'Ready';
-            }
-        }
+    // ── Orb tap: user gesture required by browser to access mic ──
+    orbWrap.addEventListener('click', () => {
+        if (active) return;
+        active = true;
+        hintEl.style.display = 'none';
+        startListening();
+    });
 
-        function startListening() {
-            if (!shouldRun || !recognition) return;
-            // Do not start if already active
-            if (STATE === 'LISTENING' || STATE === 'PROCESSING' || STATE === 'SPEAKING') return;
-            try {
-                recognition.start();
-            } catch(e) {
-                console.warn('[Voice] Could not start recognition:', e.message);
-                setTimeout(startListening, 1000);
-            }
-        }
+    // ── State management ──
+    function setUI(state) {
+        STATE = state;
+        orbWrap.className = 'orb-wrap';
+        if (state === 'LISTENING') { statusEl.textContent = 'Listening...'; orbWrap.classList.add('listening'); }
+        else if (state === 'PROCESSING') { statusEl.textContent = 'Thinking...'; orbWrap.classList.add('thinking'); }
+        else if (state === 'SPEAKING') { statusEl.textContent = 'Speaking...'; orbWrap.classList.add('speaking'); }
+        else { statusEl.textContent = 'Tap orb to start'; }
+    }
 
-        function speakText(text) {
-            if (!window.speechSynthesis || !shouldRun) return;
-            setState('SPEAKING');
-            window.speechSynthesis.cancel();
+    // ── Speech Recognition ──
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+        recognition = new SR();
+        recognition.continuous = true;   // keep mic open — most reliable approach
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
 
-            const cleanText = text.replace(/[*#_`]/g, '');
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            const isHindi = /[\u0900-\u097F]/.test(cleanText);
-            utterance.lang = isHindi ? 'hi-IN' : 'en-US';
+        recognition.onstart = () => setUI('LISTENING');
 
-            // Pick best voice
-            const trySetVoice = () => {
-                const voices = window.speechSynthesis.getVoices();
-                if (voices.length > 0) {
-                    let v = voices.find(v => v.lang.startsWith(isHindi ? 'hi' : 'en') && (v.name.includes('Google') || v.name.includes('Female')));
-                    if (!v) v = voices.find(v => v.lang.startsWith(isHindi ? 'hi' : 'en'));
-                    if (v) utterance.voice = v;
+        recognition.onresult = (e) => {
+            // Get the last final result
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                if (e.results[i].isFinal) {
+                    const text = e.results[i][0].transcript.trim();
+                    if (!text) continue;
+                    console.log('[Voice] You said:', text);
+                    // Stop mic while AI is thinking
+                    try { recognition.stop(); } catch(_) {}
+                    setUI('PROCESSING');
+                    socket.emit('send_message', { text });
                 }
-            };
-            trySetVoice();
-            if (window.speechSynthesis.onvoiceschanged !== undefined) {
-                window.speechSynthesis.onvoiceschanged = trySetVoice;
             }
-
-            utterance.onend = () => {
-                if (shouldRun) {
-                    setState('IDLE');
-                    setTimeout(startListening, 600);
-                }
-            };
-            utterance.onerror = utterance.onend;
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        // Setup Speech Recognition
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRec) {
-            recognition = new SpeechRec();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
-
-            recognition.onstart = () => {
-                setState('LISTENING');
-            };
-
-            recognition.onresult = (event) => {
-                const text = event.results[0][0].transcript;
-                console.log('[Voice] User said:', text);
-                setState('PROCESSING');
-                socket.emit('send_message', { text: text });
-            };
-
-            recognition.onerror = (event) => {
-                console.error('[Voice] Error:', event.error);
-                if (event.error === 'not-allowed') {
-                    shouldRun = false;
-                    statusLabel.innerText = 'Mic access denied';
-                } else if (STATE === 'LISTENING') {
-                    // On transient errors, retry
-                    setState('IDLE');
-                }
-            };
-
-            recognition.onend = () => {
-                // Only restart if we are still in LISTENING state 
-                // (meaning no result was captured — silence or timeout)
-                // If state is PROCESSING or SPEAKING, do NOT restart — let the flow continue
-                if (STATE === 'LISTENING' && shouldRun) {
-                    setState('IDLE');
-                    setTimeout(startListening, 500);
-                }
-            };
-        } else {
-            statusLabel.innerText = 'Voice not supported in this browser';
-        }
-
-        // Socket events - connect just sets up, user tap starts mic
-        socket.on('connect', () => {
-            console.log('[Voice] Connected to Jarvis');
-            statusLabel.innerText = 'TAP ORB TO START';
-        });
-
-        // User MUST tap orb to satisfy browser user-gesture requirement
-        let started = false;
-        orbWrapper.addEventListener('click', () => {
-            if (!shouldRun) return;
-            if (!started) {
-                started = true;
-                startListening();
-            }
-        });
-
-
-        socket.on('bot_message', (data) => {
-            speakText(data.text);
-        });
-
-        // End call button
-        endCallBtn.onclick = () => {
-            shouldRun = false;
-            if (recognition) try { recognition.stop(); } catch(e){}
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-            window.location.href = '/';
         };
 
-        // Particle background
-        const canvas = document.createElement('canvas');
-        document.getElementById('particles').appendChild(canvas);
-        const ctx = canvas.getContext('2d');
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        const pts = Array.from({length: 100}, () => ({
-            reset(w, h) { this.x = Math.random()*w; this.y = Math.random()*h; this.s = Math.random()*2; this.sp = Math.random()*0.5+0.1; },
-            update() { this.y -= this.sp; if(this.y < 0) this.reset(canvas.width, canvas.height); },
-            draw() { ctx.fillStyle='rgba(0,210,255,0.5)'; ctx.beginPath(); ctx.arc(this.x,this.y,this.s,0,6.28); ctx.fill(); }
-        }));
-        pts.forEach(p => p.reset(window.innerWidth, window.innerHeight));
-        function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); pts.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(animate); }
-        window.onresize = resize; resize(); animate();
+        recognition.onerror = (e) => {
+            console.error('[Voice] Error:', e.error);
+            if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                statusEl.textContent = 'Mic blocked — allow mic access';
+                active = false;
+            } else if (e.error === 'no-speech') {
+                // normal — just keep going
+            }
+        };
+
+        recognition.onend = () => {
+            // If we're in LISTENING state and recognition ended (e.g. timeout),
+            // restart automatically to keep listening
+            if (STATE === 'LISTENING' && active) {
+                try { recognition.start(); } catch(_) {}
+            }
+        };
+    } else {
+        statusEl.textContent = 'Voice not supported in this browser';
+    }
+
+    function startListening() {
+        if (!recognition || STATE === 'SPEAKING' || STATE === 'PROCESSING') return;
+        setUI('LISTENING');
+        try { recognition.start(); } catch(e) {
+            console.warn('[Voice] start failed:', e.message);
+            setTimeout(startListening, 800);
+        }
+    }
+
+    // ── TTS: Jarvis speaks back ──
+    function speak(text) {
+        if (!window.speechSynthesis || !active) return;
+        setUI('SPEAKING');
+        try { recognition.stop(); } catch(_) {}
+        window.speechSynthesis.cancel();
+
+        const clean = text.replace(/[*#_`~]/g, '');
+        const utt = new SpeechSynthesisUtterance(clean);
+        const hindi = /[\u0900-\u097F]/.test(clean);
+        utt.lang = hindi ? 'hi-IN' : 'en-US';
+        utt.rate = 1.0;
+
+        const pickVoice = () => {
+            const voices = window.speechSynthesis.getVoices();
+            const v = voices.find(v => v.lang.startsWith(hindi ? 'hi' : 'en') && v.name.includes('Google'))
+                   || voices.find(v => v.lang.startsWith(hindi ? 'hi' : 'en'));
+            if (v) utt.voice = v;
+        };
+        pickVoice();
+        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = pickVoice;
+
+        utt.onend = () => {
+            if (active) setTimeout(startListening, 500);
+        };
+        utt.onerror = utt.onend;
+        window.speechSynthesis.speak(utt);
+    }
+
+    // ── Socket ──
+    socket.on('connect', () => console.log('[Voice] Connected.'));
+    socket.on('bot_message', (data) => speak(data.text));
+
+    // ── End call ──
+    endBtn.onclick = () => {
+        active = false;
+        try { recognition.stop(); } catch(_) {}
+        window.speechSynthesis.cancel();
+        window.location.href = '/';
+    };
+
+    // ── Particles ──
+    const cv = document.createElement('canvas');
+    document.getElementById('particles').appendChild(cv);
+    const cx = cv.getContext('2d');
+    const resize = () => { cv.width = innerWidth; cv.height = innerHeight; };
+    resize(); window.onresize = resize;
+    const dots = Array.from({length:120}, () => ({
+        x: Math.random()*innerWidth, y: Math.random()*innerHeight,
+        r: Math.random()*1.5+.3, s: Math.random()*.4+.05
+    }));
+    (function frame() {
+        cx.clearRect(0,0,cv.width,cv.height);
+        dots.forEach(d => {
+            cx.fillStyle = 'rgba(0,210,255,0.45)';
+            cx.beginPath(); cx.arc(d.x, d.y, d.r, 0, 6.28); cx.fill();
+            d.y -= d.s; if(d.y < 0) { d.y = cv.height; d.x = Math.random()*cv.width; }
+        });
+        requestAnimationFrame(frame);
+    })();
     </script>
 </body>
 </html>
