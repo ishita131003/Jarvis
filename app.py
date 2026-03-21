@@ -95,6 +95,7 @@ def on_connect():
 @socketio.on('send_message')
 def on_send_message(data):
     """Triggered when user sends a text message."""
+    sid = request.sid  # capture before background task
     user_input = data.get('text', '').strip().lower()
     file_data = data.get('file', None)
     file_type = data.get('file_type', 'image')
@@ -112,9 +113,9 @@ def on_send_message(data):
         emit('status', {'state': 'goodbye', 'message': 'Shutting down...'})
         return
 
-    socketio.start_background_task(process_input, user_input, file_data, file_type)
+    socketio.start_background_task(process_input, user_input, file_data, file_type, sid)
 
-def process_input(user_input, file_data=None, file_type='image'):
+def process_input(user_input, file_data=None, file_type='image', sid=None):
     """Process user input through commands or AI."""
     import traceback
     try:
