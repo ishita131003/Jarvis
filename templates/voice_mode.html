@@ -51,12 +51,22 @@
     let recognition = null;
     let active = false;   // becomes true after first orb tap
 
-    // ── Orb tap: user gesture required by browser to access mic ──
+    // ── Orb tap: user gesture required by browser to access mic AND unlock TTS ──
     orbWrap.addEventListener('click', () => {
         if (active) return;
         active = true;
         hintEl.style.display = 'none';
-        startListening();
+
+        // CRITICAL: Prime speech synthesis INSIDE the user gesture to unlock TTS for the session.
+        // Without this, Chrome blocks speechSynthesis.speak() called from socket events.
+        const primer = new SpeechSynthesisUtterance(' ');
+        primer.volume = 0;
+        window.speechSynthesis.speak(primer);
+
+        // Small greeting to confirm TTS is working
+        setTimeout(() => {
+            speak("Hello Ishita, I'm listening. How can I help you?");
+        }, 300);
     });
 
     // ── State management ──
