@@ -1630,8 +1630,11 @@
 
 <body>
     <!-- AUTH OVERLAY -->
-    <div id="authOverlay" class="auth-overlay active">
-        <div class="auth-card">
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-card" style="position: relative;">
+            <button id="closeAuthBtn" class="close-btn" style="position: absolute; top: 15px; right: 15px;">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
             <div class="auth-logo">J.A.R.V.I.S.</div>
             <div class="auth-subtitle">System Access</div>
             <h2>Welcome Back</h2>
@@ -1866,6 +1869,7 @@
                     <input type="text" id="modalNameInput" class="rename-input" placeholder="e.g. J.A.R.V.I.S.">
                     <button id="modalSaveNameBtn" class="save-btn">Save</button>
                 </div>
+                <button id="signInSettingsBtn" class="google-btn" style="border: 1px solid var(--accent-cyan); color: var(--accent-cyan); background: rgba(0, 122, 255, 0.05); display: none; margin-bottom: 10px;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Sign In</button>
                 <button id="signOutBtn" class="google-btn" style="border: 1px solid rgba(255, 68, 68, 0.3); color: #ff4444; background: rgba(255, 68, 68, 0.05);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Sign Out</button>
             </div>
         </div>
@@ -1911,6 +1915,8 @@
 
         function handleAuthChange(session) {
             const authOverlay = document.getElementById('authOverlay');
+            const signOutBtn = document.getElementById('signOutBtn');
+            const signInSettingsBtn = document.getElementById('signInSettingsBtn');
             if (session) {
                 currentUser = session.user;
                 authOverlay.classList.remove('active');
@@ -1919,11 +1925,17 @@
                 const fullName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
                 document.getElementById('profileName').textContent = fullName;
                 document.getElementById('profileEmail').textContent = currentUser.email;
+                if (signOutBtn) signOutBtn.style.display = 'flex';
+                if (signInSettingsBtn) signInSettingsBtn.style.display = 'none';
             } else {
                 currentUser = null;
+                document.getElementById('profileName').textContent = 'Guest';
+                document.getElementById('profileEmail').textContent = 'Not logged in';
+                if (signOutBtn) signOutBtn.style.display = 'none';
+                if (signInSettingsBtn) signInSettingsBtn.style.display = 'flex';
+
                 // Only show overlay if keys are actually provided
                 if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-                    authOverlay.classList.add('active');
                     document.getElementById('googleLoginBtn').innerHTML = '<svg viewBox="0 0 48 48" style="width:22px;height:22px"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.7 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Continue with Google';
                 }
             }
@@ -1966,6 +1978,15 @@
                 await supabaseClient.auth.signOut();
                 document.getElementById('settingsOverlay').classList.remove('active');
             }
+        });
+
+        document.getElementById('signInSettingsBtn')?.addEventListener('click', () => {
+            document.getElementById('settingsOverlay').classList.remove('active');
+            document.getElementById('authOverlay').classList.add('active');
+        });
+
+        document.getElementById('closeAuthBtn')?.addEventListener('click', () => {
+            document.getElementById('authOverlay').classList.remove('active');
         });
 
         document.addEventListener('DOMContentLoaded', checkSession);
@@ -2193,6 +2214,10 @@
 
         // --- Mic Button ---
         micBtn.addEventListener('click', () => {
+            if (!currentUser && SUPABASE_URL && SUPABASE_ANON_KEY) {
+                document.getElementById('authOverlay').classList.add('active');
+                return;
+            }
             if (!isListening && recognition) {
                 recognition.start();
             } else if (isListening && recognition) {
@@ -2204,6 +2229,10 @@
 
         // Orb also triggers listening
         orb.addEventListener('click', () => {
+            if (!currentUser && SUPABASE_URL && SUPABASE_ANON_KEY) {
+                document.getElementById('authOverlay').classList.add('active');
+                return;
+            }
             if (!isListening && recognition) {
                 recognition.start();
             }
@@ -2252,7 +2281,13 @@
         let currentFileType = null;
         let currentFileName = "";
 
-        attachBtn.addEventListener('click', () => fileInput.click());
+        attachBtn.addEventListener('click', () => {
+            if (!currentUser && SUPABASE_URL && SUPABASE_ANON_KEY) {
+                document.getElementById('authOverlay').classList.add('active');
+                return;
+            }
+            fileInput.click();
+        });
 
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -2316,6 +2351,11 @@
         });
 
         function sendText() {
+            if (!currentUser && SUPABASE_URL && SUPABASE_ANON_KEY) {
+                document.getElementById('authOverlay').classList.add('active');
+                return;
+            }
+
             const text = textInput.value.trim();
             if (!text && !currentFileData) return;
             
