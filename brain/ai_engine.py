@@ -6,9 +6,12 @@ Added robustness for 429 (Rate Limit) errors and model fallbacks.
 """
 
 import os
-import time
 import requests
 from dotenv import load_dotenv
+try:
+    import eventlet
+except ImportError:
+    eventlet = None
 
 load_dotenv()
 
@@ -72,6 +75,13 @@ def classify_query(query: str) -> str:
     if any(t in q for t in ["what is", "how to", "explain", "why", "who"]): return "knowledge"
     return "simple"
 
+def _sleep(seconds):
+    """Use eventlet.sleep if available so we don't block the event loop."""
+    if eventlet:
+        eventlet.sleep(seconds)
+    else:
+        import time; time.sleep(seconds)
+
 # _gemini_call removed to prioritize Llama as requested.
 
 def _openrouter_call(messages: list, max_tokens: int, pass_num: int = 1) -> str | None:
@@ -98,11 +108,9 @@ def _openrouter_call(messages: list, max_tokens: int, pass_num: int = 1) -> str 
             
             if r.status_code == 429:
                 print(f"[AI] {model} Rate Limited (429).")
-                # Wait longer on 429
-                time.sleep(1 * pass_num) 
+                _sleep(1)
             else:
                 print(f"[AI] {model} Error: {r.status_code}")
-                # No sleep for 404/400 - move fast!
                 
         except Exception as e:
             print(f"[AI] Exception for {model}: {e}")
@@ -147,17 +155,17 @@ def ask_ai(question: str, lang: str = "en", search_context: str = "", history: l
     
     messages.append({"role": "user", "content": user_content})
     
-    # 1. Try FAST HuggingFace first (Usually very stable for free keys)
-    # CRITICAL: Skip HF if image_data is present, as our current HF models are TEXT-ONLY.
-    if not image_data:
+    # Try HuggingFace first only if NOT on Render (avoids extra latency on cloud)
+    import os
+    if not os.environ.get('RENDER') and not image_data:
         print(f"[AI] Strategy: HF Initial...")
         result = _huggingface_call(messages)
         if result:
             return result
     else:
-        print(f"[AI] Vision detected. Skipping text-only HF fallbacks.")
+        print(f"[AI] Skipping HF (Render/Vision mode). Going straight to OpenRouter.")
 
-    # 2. TRUE PERSISTENCE: OpenRouter Loop
+    # OpenRouter Loop — max 2 passes with event-loop-friendly sleep
     pass_num = 1
     max_passes = 2
     while pass_num <= max_passes:
@@ -169,9 +177,7 @@ def ask_ai(question: str, lang: str = "en", search_context: str = "", history: l
         if pass_num == max_passes:
             break
             
-        wait_time = min(5, (pass_num * 2))
-        print(f"[AI] All models busy. Retrying in {wait_time}s...")
-        time.sleep(wait_time)
+        _sleep(2)  # eventlet-safe sleep — yields to event loop, doesn't block it
         pass_num += 1
 
-    return "I'm having trouble connecting to my neural network right now. Please check if your OpenRouter API key is active or if there's a temporary outage."
+    return "I'm having trouble connecting to my AI models right now. Please try again."
