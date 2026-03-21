@@ -135,11 +135,14 @@
     }
 
     // ── TTS: Jarvis speaks back ──
+    let ttsWatchdog = null;
+
     function speak(text) {
         if (!window.speechSynthesis || !active) return;
         setUI('SPEAKING');
         try { recognition.stop(); } catch(_) {}
         window.speechSynthesis.cancel();
+        if (ttsWatchdog) { clearTimeout(ttsWatchdog); ttsWatchdog = null; }
 
         const clean = text.replace(/[*#_`~]/g, '');
         const utt = new SpeechSynthesisUtterance(clean);
@@ -156,10 +159,30 @@
         pickVoice();
         if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = pickVoice;
 
-        utt.onend = () => {
+        const doneListening = () => {
+            if (ttsWatchdog) { clearTimeout(ttsWatchdog); ttsWatchdog = null; }
             if (active) setTimeout(startListening, 500);
         };
-        utt.onerror = utt.onend;
+
+        utt.onend = doneListening;
+        utt.onerror = doneListening;
+
+        // WATCHDOG: Chrome has a known bug where speechSynthesis silently stops on long text
+        // without ever firing onend. Force transition after estimated speaking time.
+        const estimatedMs = Math.max(5000, (clean.length / 12) * 1000); // ~12 chars/sec
+        ttsWatchdog = setTimeout(() => {
+            console.warn('[Voice] TTS watchdog fired — forcing LISTENING state');
+            window.speechSynthesis.cancel();
+            doneListening();
+        }, estimatedMs + 3000);
+
+        // Chrome bug workaround: resume if paused mid-speech
+        const resumeInterval = setInterval(() => {
+            if (!window.speechSynthesis.speaking) { clearInterval(resumeInterval); return; }
+            if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        }, 5000);
+        utt.onend = () => { clearInterval(resumeInterval); doneListening(); };
+
         window.speechSynthesis.speak(utt);
     }
 
