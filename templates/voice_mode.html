@@ -339,9 +339,10 @@
             idle:      'Tap orb to start call',
             listening: 'Listening...',
             thinking:  'Thinking...',
-            speaking:  'Speaking...'
+            speaking:  'Speaking...',
+            error:     'Network Error (API Limit) - Waiting...'
         };
-        statusLabel.textContent = labels[p] || '';
+        statusLabel.textContent = labels[p] || statusLabel.textContent;
     }
 
     function cleanText(text) {
@@ -362,6 +363,7 @@
         recognition.lang           = 'en-US';
         
         let lastErrorTime = 0;
+        let networkErrorCount = 0;
 
         recognition.onstart = () => {
             console.log('[STT] Started');
@@ -396,10 +398,26 @@
                 return;
             }
             if (e.error === 'network') {
-                statusLabel.textContent = 'Network error (API limit) - waiting...';
-                // network error often means rate limit or disconnect. Back off heavily.
+                networkErrorCount++;
+                console.warn('[STT] Network error detected. Count:', networkErrorCount);
+                
+                // If we get multiple network errors or if we suspect it's Brave, force fallback
+                if (networkErrorCount >= 1) {
+                    console.log('[STT] Switching to Groq Fallback STT...');
+                    statusLabel.textContent = 'Switching to Groq Engine...';
+                    useFallbackSTT = true;
+                    // Try to setup and start immediately
+                    setupFallbackSTT().then(ready => {
+                        if (ready && active) {
+                            setTimeout(startListening, 500);
+                        }
+                    });
+                    return;
+                }
+                
+                statusLabel.textContent = 'Connecting to Speech Engine...';
                 if (active && phase === 'listening') {
-                    setTimeout(startListening, 3000); // 3 seconds backoff
+                    setTimeout(startListening, 2000);
                 }
                 return;
             }
@@ -632,6 +650,12 @@
 
             active = true;
             startHint.classList.add('hidden');
+
+            // Quick check for Brave to set expectation
+            const isBrave = (navigator.brave && await navigator.brave.isBrave()) || false;
+            if (isBrave) {
+                console.log('[System] Brave detected. Native STT may fail, ready for fallback.');
+            }
 
             if (useFallbackSTT) {
                 let ready = await setupFallbackSTT();
