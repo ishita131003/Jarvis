@@ -358,6 +358,8 @@
         recognition.continuous    = false;  // single utterance — simpler & more reliable
         recognition.interimResults = false;
         recognition.lang           = 'en-US';
+        
+        let lastErrorTime = 0;
 
         recognition.onstart = () => {
             console.log('[STT] Started');
@@ -384,13 +386,22 @@
 
         recognition.onerror = (e) => {
             console.warn('[STT] Error:', e.error);
+            lastErrorTime = Date.now();
+            
             if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
                 statusLabel.textContent = 'Mic blocked — please allow microphone access';
                 active = false;
                 return;
             }
-            // Only restart on no-speech / network errors while we're in listening idle
-            // Do NOT restart if thinking or speaking — afterSpeak() handles that
+            if (e.error === 'network') {
+                statusLabel.textContent = 'Network error (API limit) - waiting...';
+                // network error often means rate limit or disconnect. Back off heavily.
+                if (active && phase === 'listening') {
+                    setTimeout(startListening, 3000); // 3 seconds backoff
+                }
+                return;
+            }
+            // Only restart on no-speech errors while we're in listening idle
             if (active && phase === 'listening') {
                 setTimeout(startListening, 600);
             }
@@ -398,9 +409,15 @@
 
         recognition.onend = () => {
             console.log('[STT] Ended, phase=', phase);
+            
+            // If we just had an error, let the onerror handler's setTimeout do the restart
+            // to respect our backoff logic.
+            if (Date.now() - lastErrorTime < 500) {
+                return;
+            }
+            
             // Auto-restart ONLY when we're genuinely still in listening state
             // (mic timed out with no speech, or brief gap — restart the cycle)
-            // Do NOT restart if we moved to thinking/speaking — TTS loop handles that
             if (active && phase === 'listening') {
                 setTimeout(startListening, 400);
             }
