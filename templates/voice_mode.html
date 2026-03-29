@@ -176,9 +176,13 @@
             display: flex;
             align-items: flex-end;
             gap: 4px;
-            height: 28px;
+            height: 32px;
             opacity: 0;
             transition: opacity 0.4s;
+        }
+        canvas#vizCanvas {
+            width: 140px;
+            height: 40px;
         }
         body.listening .bars  { opacity: 1; }
         body.speaking  .bars  { opacity: 1; }
@@ -262,11 +266,7 @@
 
         <!-- Sound bars visualiser -->
         <div class="bars">
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
+            <canvas id="vizCanvas"></canvas>
         </div>
 
         <!-- Status text -->
@@ -445,7 +445,11 @@
     }
 
     let mediaRecorder = null;
-    let audioChunks = [];
+    let audioChunks   = [];
+    let audioCtx      = null;
+    let analyser      = null;
+    let dataArray     = null;
+    let source        = null;
 
     async function setupFallbackSTT() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -454,13 +458,42 @@
         }
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            
+            // Setup Visualiser
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            source   = audioCtx.createMediaStreamSource(stream);
+            source.connect(analyser);
+            analyser.fftSize = 64;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            drawVisualiser();
+
+            // Setup Recorder
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+                             ? 'audio/webm;codecs=opus' 
+                             : 'audio/webm';
+            
+            mediaRecorder = new MediaRecorder(stream, { mimeType });
+            console.log("[Fallback STT] Using MIME type:", mimeType);
+
             mediaRecorder.ondataavailable = e => {
-                if (e.data.size > 0) audioChunks.push(e.data);
+                if (e.data.size > 0) {
+                    audioChunks.push(e.data);
+                    console.log("[Fallback STT] Received chunk:", e.data.size, "bytes");
+                }
             };
             mediaRecorder.onstop = () => {
-                let blob = new Blob(audioChunks, { type: 'audio/webm' });
+                let blob = new Blob(audioChunks, { type: mimeType });
+                console.log("[Fallback STT] Exported blob:", blob.size, "bytes");
                 audioChunks = [];
+                
+                if (blob.size < 500) {
+                    console.warn("[Fallback STT] Recording too short/empty");
+                    setPhase('idle');
+                    startListening();
+                    return;
+                }
+
                 let reader = new FileReader();
                 reader.onloadend = () => {
                     socket.emit('transcribe_audio', { audio: reader.result });
@@ -473,6 +506,35 @@
             statusLabel.textContent = 'Mic access denied';
             return false;
         }
+    }
+
+    function drawVisualiser() {
+        const canvas = document.getElementById('vizCanvas');
+        const ctx    = canvas.getContext('2d');
+        const W      = canvas.width;
+        const H      = canvas.height;
+
+        function render() {
+            requestAnimationFrame(render);
+            if (phase !== 'listening' && phase !== 'speaking') {
+                ctx.clearRect(0,0,W,H);
+                return;
+            }
+            
+            analyser.getByteFrequencyData(dataArray);
+            ctx.clearRect(0, 0, W, H);
+            
+            const barWidth = (W / dataArray.length) * 2.5;
+            let x = 0;
+            
+            for (let i = 0; i < dataArray.length; i++) {
+                const barHeight = (dataArray[i] / 255) * H;
+                ctx.fillStyle = phase === 'listening' ? '#00ff88' : '#00d2ff';
+                ctx.fillRect(x, H - barHeight, barWidth, barHeight);
+                x += barWidth + 2;
+            }
+        }
+        render();
     }
 
     function startListening() {

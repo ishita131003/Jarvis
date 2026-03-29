@@ -129,8 +129,12 @@ def on_transcribe_audio(data):
         audio_bytes = base64.b64decode(audio_base64)
         from brain.groq_stt import transcribe_audio_groq
         transcript = transcribe_audio_groq(audio_bytes)
-        print(f"[Groq STT Fallback] Heard: {transcript}")
+        print(f"[Groq STT Fallback] Transcript result: '{transcript}'")
         
+        if transcript and "ERROR:" in transcript:
+             emit('stt_failed', {'message': transcript.replace("ERROR: ", "")})
+             return
+
         if transcript and transcript.strip():
             emit('user_message', {'text': transcript, 'file': None, 'file_type': 'image', 'file_name': ''})
             socketio.start_background_task(process_input, transcript, None, 'image', sid)
