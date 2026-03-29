@@ -3,219 +3,583 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Chat - J.A.R.V.I.S.</title>
+    <title>J.A.R.V.I.S. Call</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <!-- Use same Socket.IO version as server -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
     <style>
-        :root { --accent: #00d2ff; --danger: #ff4b2b; }
-        * { box-sizing: border-box; }
-        body { margin: 0; background: #050505; color: #fff; font-family: 'Outfit', sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-        #particles { position: fixed; inset: 0; z-index: 0; }
-        .container { text-align: center; z-index: 10; }
-        .orb-wrap { width: 260px; height: 260px; margin: 0 auto 40px; position: relative; cursor: pointer; }
-        .orb { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, var(--accent) 0%, rgba(0,210,255,.15) 70%, transparent 100%); box-shadow: 0 0 60px var(--accent); animation: pulse 2.5s ease-in-out infinite; transition: all .3s; }
-        .orb-wrap.listening .orb { background: radial-gradient(circle,#00ff88 0%,rgba(0,255,136,.15) 70%,transparent 100%); box-shadow: 0 0 80px #00ff88; animation: pulse-fast 1s ease-in-out infinite; }
-        .orb-wrap.speaking .orb { background: radial-gradient(circle,var(--accent) 0%,rgba(0,210,255,.3) 70%,transparent 100%); box-shadow: 0 0 100px var(--accent); animation: pulse-fast .5s ease-in-out infinite; }
-        .orb-wrap.thinking .orb { background: radial-gradient(circle,#ffcc00 0%,rgba(255,204,0,.15) 70%,transparent 100%); box-shadow: 0 0 80px #ffcc00; animation: pulse 1s ease-in-out infinite; }
-        @keyframes pulse { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.05);opacity:1} }
-        @keyframes pulse-fast { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
-        .status { font-size: 1.3rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 35px; color: var(--accent); text-transform: uppercase; min-height: 2rem; }
-        .tap-hint { font-size: 0.75rem; color: rgba(0,210,255,.5); letter-spacing: 2px; margin-bottom: 20px; text-transform: uppercase; }
-        .end-btn { background: rgba(255,75,43,.1); border: 1px solid var(--danger); color: var(--danger); padding: 14px 40px; font-size: 1rem; border-radius: 50px; cursor: pointer; transition: all .3s; text-transform: uppercase; letter-spacing: 2px; display: inline-flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; }
-        .end-btn:hover { background: var(--danger); color: #fff; box-shadow: 0 0 20px var(--danger); }
-        .end-btn svg { width: 18px; height: 18px; fill: currentColor; }
+        :root {
+            --cyan: #00d2ff;
+            --green: #00ff88;
+            --yellow: #ffcc00;
+            --red: #ff4b2b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #050505;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Particle canvas */
+        #particles {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .ui {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 36px;
+        }
+
+        /* ── ORB ── */
+        .orb-ring {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* glow ring */
+        .orb-ring::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid var(--cyan);
+            opacity: 0.3;
+            transition: border-color 0.4s, opacity 0.4s;
+            animation: spin 8s linear infinite;
+        }
+
+        .orb-ring::after {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border-radius: 50%;
+            border: 1px solid var(--cyan);
+            opacity: 0.12;
+            animation: spin-rev 12s linear infinite;
+        }
+
+        @keyframes spin     { to { transform: rotate(360deg); } }
+        @keyframes spin-rev { to { transform: rotate(-360deg); } }
+
+        .orb {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 38% 38%, var(--cyan) 0%, rgba(0,210,255,.15) 65%, transparent 100%);
+            box-shadow: 0 0 60px rgba(0,210,255,.5), 0 0 120px rgba(0,210,255,.15);
+            animation: breathe 3s ease-in-out infinite;
+            transition: background 0.5s, box-shadow 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .orb-icon {
+            width: 56px;
+            height: 56px;
+            opacity: 0.85;
+            transition: opacity 0.3s;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1);    opacity: 0.85; }
+            50%       { transform: scale(1.06); opacity: 1;   }
+        }
+
+        /* LISTENING state */
+        body.listening .orb {
+            background: radial-gradient(circle at 38% 38%, var(--green) 0%, rgba(0,255,136,.15) 65%, transparent 100%);
+            box-shadow: 0 0 80px rgba(0,255,136,.6), 0 0 160px rgba(0,255,136,.15);
+            animation: pulse-listen 0.8s ease-in-out infinite;
+        }
+        body.listening .orb-ring::before { border-color: var(--green); opacity: 0.5; }
+
+        @keyframes pulse-listen {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.09); }
+        }
+
+        /* THINKING state */
+        body.thinking .orb {
+            background: radial-gradient(circle at 38% 38%, var(--yellow) 0%, rgba(255,204,0,.15) 65%, transparent 100%);
+            box-shadow: 0 0 80px rgba(255,204,0,.5), 0 0 160px rgba(255,204,0,.1);
+            animation: spin-orb 1.2s linear infinite;
+        }
+        body.thinking .orb-ring::before { border-color: var(--yellow); opacity: 0.5; }
+
+        @keyframes spin-orb { to { transform: rotate(360deg); } }
+
+        /* SPEAKING state */
+        body.speaking .orb {
+            background: radial-gradient(circle at 38% 38%, var(--cyan) 0%, rgba(0,210,255,.3) 65%, transparent 100%);
+            box-shadow: 0 0 100px rgba(0,210,255,.7), 0 0 200px rgba(0,210,255,.2);
+            animation: speak-pulse 0.4s ease-in-out infinite;
+        }
+
+        @keyframes speak-pulse {
+            0%, 100% { transform: scale(1);    box-shadow: 0 0 100px rgba(0,210,255,.7); }
+            50%       { transform: scale(1.07); box-shadow: 0 0 130px rgba(0,210,255,.9); }
+        }
+
+        /* ── STATUS LABEL ── */
+        .status-label {
+            font-size: 1.1rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            min-height: 1.5em;
+            transition: color 0.4s;
+        }
+
+        body.listening .status-label { color: var(--green); }
+        body.thinking  .status-label { color: var(--yellow); }
+        body.speaking  .status-label { color: var(--cyan); }
+
+        /* ── START HINT (shown before first tap) ── */
+        .start-hint {
+            font-size: 0.75rem;
+            color: rgba(0,210,255,.45);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: -16px;
+            transition: opacity 0.4s;
+        }
+
+        .start-hint.hidden { opacity: 0; pointer-events: none; }
+
+        /* ── SOUND BARS (mic visualiser) ── */
+        .bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 28px;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        body.listening .bars  { opacity: 1; }
+        body.speaking  .bars  { opacity: 1; }
+
+        .bar {
+            width: 4px;
+            border-radius: 2px;
+            background: var(--cyan);
+            animation: bar-dance 0.9s ease-in-out infinite;
+        }
+        body.listening .bar { background: var(--green); }
+
+        .bar:nth-child(1) { animation-delay: 0s;    height: 8px; }
+        .bar:nth-child(2) { animation-delay: 0.15s; height: 16px; }
+        .bar:nth-child(3) { animation-delay: 0.3s;  height: 24px; }
+        .bar:nth-child(4) { animation-delay: 0.15s; height: 16px; }
+        .bar:nth-child(5) { animation-delay: 0s;    height: 8px; }
+
+        @keyframes bar-dance {
+            0%, 100% { transform: scaleY(0.3); }
+            50%       { transform: scaleY(1); }
+        }
+
+        /* ── END CALL BUTTON ── */
+        .end-btn {
+            background: rgba(255,75,43,.08);
+            border: 1px solid var(--red);
+            color: var(--red);
+            padding: 13px 38px;
+            font-size: 0.95rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.25s, box-shadow 0.25s, color 0.25s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Outfit', sans-serif;
+        }
+        .end-btn:hover {
+            background: var(--red);
+            color: #fff;
+            box-shadow: 0 0 24px var(--red);
+        }
+        .end-btn svg { width: 17px; height: 17px; fill: currentColor; }
+
+        /* ── NOT SUPPORTED WARNING ── */
+        .no-support {
+            display: none;
+            background: rgba(255,75,43,.12);
+            border: 1px solid var(--red);
+            border-radius: 12px;
+            padding: 20px 30px;
+            max-width: 380px;
+            text-align: center;
+            color: #ffaaaa;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
-    <div id="particles"></div>
-    <div class="container">
-        <div class="orb-wrap" id="orbWrap">
-            <div class="orb"></div>
+    <canvas id="particles"></canvas>
+
+    <div class="ui" id="mainUI">
+        <!-- Orb -->
+        <div class="orb-ring" id="orbRing">
+            <div class="orb" id="orb">
+                <!-- mic icon -->
+                <svg class="orb-icon" id="orbIcon" viewBox="0 0 24 24" fill="none"
+                     stroke="rgba(255,255,255,0.85)" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="2" width="6" height="11" rx="3"/>
+                    <path d="M5 10a7 7 0 0 0 14 0"/>
+                    <line x1="12" y1="19" x2="12" y2="22"/>
+                    <line x1="8"  y1="22" x2="16" y2="22"/>
+                </svg>
+            </div>
         </div>
-        <div class="status" id="status">Tap orb to start</div>
-        <div class="tap-hint" id="hint">tap once · then just speak</div>
+
+        <!-- Sound bars visualiser -->
+        <div class="bars">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+
+        <!-- Status text -->
+        <div class="status-label" id="statusLabel">Tap orb to start call</div>
+
+        <!-- Start hint -->
+        <div class="start-hint" id="startHint">tap once · then just speak naturally</div>
+
+        <!-- End call -->
         <button class="end-btn" id="endBtn">
-            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36
+                         1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45
+                         1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1
+                         1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+            </svg>
             End Call
         </button>
     </div>
 
+    <!-- Shown when browser doesn't support Web Speech API -->
+    <div class="no-support" id="noSupport">
+        <strong>Voice not supported</strong><br>
+        Please use <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> on desktop
+        to use voice call mode. Safari and Firefox do not support the Web Speech API.
+    </div>
+
     <script>
-    const socket = io();
-    const orbWrap = document.getElementById('orbWrap');
-    const statusEl = document.getElementById('status');
-    const hintEl = document.getElementById('hint');
-    const endBtn = document.getElementById('endBtn');
+    // ════════════════════════════════════════════════════════════════
+    //  J.A.R.V.I.S.  —  Pure Call Mode
+    //  Flow: idle → [tap] → speak greeting → listen → send → speak → listen → …
+    //  No text displayed. Just pure audio conversation.
+    // ════════════════════════════════════════════════════════════════
 
-    let STATE = 'IDLE';   // IDLE | LISTENING | PROCESSING | SPEAKING
+    const socket = io({ transports: ['websocket', 'polling'] });
+
+    // ─── DOM refs ───
+    const body        = document.body;
+    const orbRing     = document.getElementById('orbRing');
+    const statusLabel = document.getElementById('statusLabel');
+    const startHint   = document.getElementById('startHint');
+    const endBtn      = document.getElementById('endBtn');
+    const noSupport   = document.getElementById('noSupport');
+
+    // ─── State ───
+    // 'idle' | 'listening' | 'thinking' | 'speaking'
+    let phase  = 'idle';
+    let active = false;      // true once user taps orb
     let recognition = null;
-    let active = false;   // becomes true after first orb tap
+    let ttsTimer    = null;
+    let resumeTimer = null;
 
-    // ── Orb tap: user gesture required by browser to access mic AND unlock TTS ──
-    orbWrap.addEventListener('click', () => {
-        if (active) return;
-        active = true;
-        hintEl.style.display = 'none';
-
-        // CRITICAL: Prime speech synthesis INSIDE the user gesture to unlock TTS for the session.
-        // Without this, Chrome blocks speechSynthesis.speak() called from socket events.
-        const primer = new SpeechSynthesisUtterance(' ');
-        primer.volume = 0;
-        window.speechSynthesis.speak(primer);
-
-        // Small greeting to confirm TTS is working
-        setTimeout(() => {
-            speak("Hello Ishita, I'm listening. How can I help you?");
-        }, 300);
-    });
-
-    // ── State management ──
-    function setUI(state) {
-        STATE = state;
-        orbWrap.className = 'orb-wrap';
-        if (state === 'LISTENING') { statusEl.textContent = 'Listening...'; orbWrap.classList.add('listening'); }
-        else if (state === 'PROCESSING') { statusEl.textContent = 'Thinking...'; orbWrap.classList.add('thinking'); }
-        else if (state === 'SPEAKING') { statusEl.textContent = 'Speaking...'; orbWrap.classList.add('speaking'); }
-        else { statusEl.textContent = 'Tap orb to start'; }
+    // ─── Check browser support ───
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR || !window.speechSynthesis) {
+        document.getElementById('mainUI').style.display = 'none';
+        noSupport.style.display = 'block';
     }
 
-    // ── Speech Recognition ──
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) {
-        recognition = new SR();
-        recognition.continuous = true;   // keep mic open — most reliable approach
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
+    // ─── Helpers ───
+    function setPhase(p) {
+        phase = p;
+        // Remove all state classes
+        body.classList.remove('listening', 'thinking', 'speaking');
+        if (p !== 'idle') body.classList.add(p);
 
-        recognition.onstart = () => setUI('LISTENING');
+        const labels = {
+            idle:      'Tap orb to start call',
+            listening: 'Listening...',
+            thinking:  'Thinking...',
+            speaking:  'Speaking...'
+        };
+        statusLabel.textContent = labels[p] || '';
+    }
+
+    function cleanText(text) {
+        // Strip markdown chars that don't read well aloud
+        return text
+            .replace(/[*#_`~=\[\]]/g, '')
+            .replace(/https?:\/\/\S+/g, '')   // strip URLs
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+
+    // ─── Speech Recognition setup ───
+    function setupRecognition() {
+        if (!SR) return;
+        recognition = new SR();
+        recognition.continuous    = false;  // single utterance — simpler & more reliable
+        recognition.interimResults = false;
+        recognition.lang           = 'en-US';
+
+        recognition.onstart = () => {
+            console.log('[STT] Started');
+            setPhase('listening');
+        };
 
         recognition.onresult = (e) => {
-            // Get the last final result
+            let transcript = '';
             for (let i = e.resultIndex; i < e.results.length; i++) {
                 if (e.results[i].isFinal) {
-                    const text = e.results[i][0].transcript.trim();
-                    if (!text) continue;
-                    console.log('[Voice] You said:', text);
-                    // Stop mic while AI is thinking
-                    try { recognition.stop(); } catch(_) {}
-                    setUI('PROCESSING');
-                    socket.emit('send_message', { text });
+                    transcript += e.results[i][0].transcript;
                 }
             }
+            transcript = transcript.trim();
+            if (!transcript) {
+                // Nothing heard — listen again
+                setTimeout(startListening, 300);
+                return;
+            }
+            console.log('[STT] Heard:', transcript);
+            setPhase('thinking');
+            socket.emit('send_message', { text: transcript });
         };
 
         recognition.onerror = (e) => {
-            console.error('[Voice] Error:', e.error);
+            console.warn('[STT] Error:', e.error);
             if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-                statusEl.textContent = 'Mic blocked — allow mic access';
+                statusLabel.textContent = 'Mic blocked — please allow microphone access';
                 active = false;
-            } else if (e.error === 'no-speech') {
-                // normal — just keep going
+                return;
+            }
+            // Only restart on no-speech / network errors while we're in listening idle
+            // Do NOT restart if thinking or speaking — afterSpeak() handles that
+            if (active && phase === 'listening') {
+                setTimeout(startListening, 600);
             }
         };
 
         recognition.onend = () => {
-            // If we're in LISTENING state and recognition ended (e.g. timeout),
-            // restart automatically to keep listening
-            if (STATE === 'LISTENING' && active) {
-                try { recognition.start(); } catch(_) {}
+            console.log('[STT] Ended, phase=', phase);
+            // Auto-restart ONLY when we're genuinely still in listening state
+            // (mic timed out with no speech, or brief gap — restart the cycle)
+            // Do NOT restart if we moved to thinking/speaking — TTS loop handles that
+            if (active && phase === 'listening') {
+                setTimeout(startListening, 400);
             }
         };
-    } else {
-        statusEl.textContent = 'Voice not supported in this browser';
     }
 
     function startListening() {
-        if (!recognition || STATE === 'SPEAKING' || STATE === 'PROCESSING') return;
-        setUI('LISTENING');
-        try { recognition.start(); } catch(e) {
-            console.warn('[Voice] start failed:', e.message);
-            setTimeout(startListening, 800);
+        if (!active || !recognition) return;
+        // Only block if AI is still thinking — speaking exit is handled by afterSpeak()
+        if (phase === 'thinking') return;
+        setPhase('listening');
+        try {
+            recognition.start();
+        } catch (err) {
+            console.warn('[STT] start() failed:', err.message);
+            if (err.name === 'InvalidStateError') {
+                // Already running — that's fine, just update the UI
+                setPhase('listening');
+            } else {
+                setTimeout(startListening, 800);
+            }
         }
     }
 
-    // ── TTS: Jarvis speaks back ──
-    let ttsWatchdog = null;
+    function stopListening() {
+        if (!recognition) return;
+        try { recognition.abort(); } catch (_) {}
+    }
 
+    // ─── TTS: Jarvis speaks ───
     function speak(text) {
-        if (!window.speechSynthesis || !active) return;
-        setUI('SPEAKING');
-        try { recognition.stop(); } catch(_) {}
+        if (!active || !window.speechSynthesis) return;
+
+        stopListening();
+        setPhase('speaking');
+
+        const clean = cleanText(text);
+        if (!clean) {
+            afterSpeak();
+            return;
+        }
+
         window.speechSynthesis.cancel();
-        if (ttsWatchdog) { clearTimeout(ttsWatchdog); ttsWatchdog = null; }
+        clearTTSTimer();
 
-        const clean = text.replace(/[*#_`~]/g, '');
-        const utt = new SpeechSynthesisUtterance(clean);
+        const utt  = new SpeechSynthesisUtterance(clean);
         const hindi = /[\u0900-\u097F]/.test(clean);
-        utt.lang = hindi ? 'hi-IN' : 'en-US';
-        utt.rate = 1.0;
+        utt.lang  = hindi ? 'hi-IN' : 'en-US';
+        utt.rate  = 1.05;
+        utt.pitch = 1.0;
 
-        const pickVoice = () => {
+        // Pick best available voice
+        function pickVoice() {
             const voices = window.speechSynthesis.getVoices();
-            const v = voices.find(v => v.lang.startsWith(hindi ? 'hi' : 'en') && v.name.includes('Google'))
-                   || voices.find(v => v.lang.startsWith(hindi ? 'hi' : 'en'));
-            if (v) utt.voice = v;
-        };
+            const preferred = voices.find(v =>
+                v.lang.startsWith(hindi ? 'hi' : 'en') && v.name.includes('Google')
+            ) || voices.find(v =>
+                v.lang.startsWith(hindi ? 'hi' : 'en')
+            );
+            if (preferred) utt.voice = preferred;
+        }
         pickVoice();
-        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = pickVoice;
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = pickVoice;
+        }
 
-        const doneListening = () => {
-            if (ttsWatchdog) { clearTimeout(ttsWatchdog); ttsWatchdog = null; }
-            if (active) setTimeout(startListening, 500);
+        utt.onend   = afterSpeak;
+        utt.onerror = (e) => {
+            console.warn('[TTS] Error:', e.error);
+            afterSpeak();
         };
 
-        utt.onend = doneListening;
-        utt.onerror = doneListening;
-
-        // WATCHDOG: Chrome has a known bug where speechSynthesis silently stops on long text
-        // without ever firing onend. Force transition after estimated speaking time.
-        const estimatedMs = Math.max(5000, (clean.length / 12) * 1000); // ~12 chars/sec
-        ttsWatchdog = setTimeout(() => {
-            console.warn('[Voice] TTS watchdog fired — forcing LISTENING state');
+        // ── Chrome watchdog: Chrome silently stops TTS on long texts ──
+        // Estimate: ~130 words per minute → ~2.2 chars/sec at rate 1.05
+        const charRate    = 13;   // chars per second (conservative)
+        const estimatedMs = Math.max(4000, (clean.length / charRate) * 1000);
+        ttsTimer = setTimeout(() => {
+            console.warn('[TTS] Watchdog fired — forcing afterSpeak');
             window.speechSynthesis.cancel();
-            doneListening();
+            afterSpeak();
         }, estimatedMs + 3000);
 
-        // Chrome bug workaround: resume if paused mid-speech
-        const resumeInterval = setInterval(() => {
-            if (!window.speechSynthesis.speaking) { clearInterval(resumeInterval); return; }
-            if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        // Chrome pauses TTS after ~15s — keep it alive
+        resumeTimer = setInterval(() => {
+            if (!window.speechSynthesis.speaking) {
+                clearInterval(resumeTimer);
+                resumeTimer = null;
+                return;
+            }
+            if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+            }
         }, 5000);
-        utt.onend = () => { clearInterval(resumeInterval); doneListening(); };
 
         window.speechSynthesis.speak(utt);
     }
 
-    // ── Socket ──
-    socket.on('connect', () => console.log('[Voice] Connected.'));
-    socket.on('bot_message', (data) => speak(data.text));
+    function afterSpeak() {
+        clearTTSTimer();
+        if (!active) return;
+        console.log('[TTS] Done — going back to listening');
+        // CRITICAL: Reset phase BEFORE calling startListening.
+        // startListening() used to bail if phase==='speaking' — now we're safe.
+        phase = 'idle';
+        setPhase('idle');
+        setTimeout(startListening, 500);
+    }
 
-    // ── End call ──
-    endBtn.onclick = () => {
+    function clearTTSTimer() {
+        if (ttsTimer)    { clearTimeout(ttsTimer);    ttsTimer    = null; }
+        if (resumeTimer) { clearInterval(resumeTimer); resumeTimer = null; }
+    }
+
+    // ─── Socket events ───
+    socket.on('connect', () => console.log('[Socket] Connected'));
+    socket.on('disconnect', () => console.log('[Socket] Disconnected'));
+
+    socket.on('bot_message', (data) => {
+        console.log('[Socket] Bot replied:', data.text?.slice(0, 60));
+        speak(data.text || '');
+    });
+
+    // Ignore bot_message while in idle (not in a call)
+    // (handled naturally because speak() checks active flag)
+
+    // ─── Orb tap — START CALL ───
+    orbRing.addEventListener('click', () => {
+        if (active) return;   // already in call
+        if (!SR || !window.speechSynthesis) return;
+
+        active = true;
+        startHint.classList.add('hidden');
+
+        setupRecognition();
+
+        // CRITICAL: Call speak() directly in user gesture context.
+        // This single speak() call both unlocks TTS AND starts the greeting.
+        // Using setTimeout would risk Chrome blocking the TTS activation.
+        // The primer utterance is no longer needed because speak() itself is called here.
+        speak("Hello Ishita, I'm Jarvis. How can I help you?");
+    });
+
+
+    // ─── End call button ───
+    endBtn.addEventListener('click', () => {
         active = false;
-        try { recognition.stop(); } catch(_) {}
+        clearTTSTimer();
+        stopListening();
         window.speechSynthesis.cancel();
         window.location.href = '/';
-    };
+    });
 
-    // ── Particles ──
-    const cv = document.createElement('canvas');
-    document.getElementById('particles').appendChild(cv);
-    const cx = cv.getContext('2d');
-    const resize = () => { cv.width = innerWidth; cv.height = innerHeight; };
-    resize(); window.onresize = resize;
-    const dots = Array.from({length:120}, () => ({
-        x: Math.random()*innerWidth, y: Math.random()*innerHeight,
-        r: Math.random()*1.5+.3, s: Math.random()*.4+.05
-    }));
-    (function frame() {
-        cx.clearRect(0,0,cv.width,cv.height);
-        dots.forEach(d => {
-            cx.fillStyle = 'rgba(0,210,255,0.45)';
-            cx.beginPath(); cx.arc(d.x, d.y, d.r, 0, 6.28); cx.fill();
-            d.y -= d.s; if(d.y < 0) { d.y = cv.height; d.x = Math.random()*cv.width; }
-        });
-        requestAnimationFrame(frame);
+    // ─── Particle background ───
+    (function initParticles() {
+        const canvas = document.getElementById('particles');
+        const ctx    = canvas.getContext('2d');
+        function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const dots = Array.from({ length: 100 }, () => ({
+            x: Math.random() * innerWidth,
+            y: Math.random() * innerHeight,
+            r: Math.random() * 1.4 + 0.3,
+            s: Math.random() * 0.35 + 0.05
+        }));
+
+        (function frame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            dots.forEach(d => {
+                ctx.fillStyle = 'rgba(0,210,255,0.4)';
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+                ctx.fill();
+                d.y -= d.s;
+                if (d.y < 0) { d.y = canvas.height; d.x = Math.random() * canvas.width; }
+            });
+            requestAnimationFrame(frame);
+        })();
     })();
     </script>
 </body>
