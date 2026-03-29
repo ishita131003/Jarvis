@@ -448,6 +448,8 @@
     }
 
     // ─── TTS: Jarvis speaks ───
+    let speakQueue = [];
+
     function speak(text) {
         if (!active || !window.speechSynthesis) return;
 
@@ -462,14 +464,34 @@
 
         window.speechSynthesis.cancel();
         clearTTSTimer();
+        
+        // Chunk the text into sentences to bypass Chrome length limits and 'interrupted' bugs
+        // Split by punctuation (., !, ?) keeping the punctuation marks.
+        // Or if it's just a long string without punctuation, split by newlines.
+        const chunks = clean.match(/[^.!?\n]+[.!?\n]+/g) || [clean];
+        speakQueue = chunks.map(c => c.trim()).filter(c => c.length > 0);
+        
+        if (speakQueue.length === 0) {
+           speakQueue = [clean];
+        }
 
-        const utt  = new SpeechSynthesisUtterance(clean);
-        const hindi = /[\u0900-\u097F]/.test(clean);
+        speakNextChunk();
+    }
+
+    function speakNextChunk() {
+        if (!active || speakQueue.length === 0) {
+            afterSpeak();
+            return;
+        }
+
+        const chunkText = speakQueue.shift();
+        const utt = new SpeechSynthesisUtterance(chunkText);
+        
+        const hindi = /[\u0900-\u097F]/.test(chunkText);
         utt.lang  = hindi ? 'hi-IN' : 'en-US';
         utt.rate  = 1.05;
         utt.pitch = 1.0;
 
-        // Pick best available voice
         function pickVoice() {
             const voices = window.speechSynthesis.getVoices();
             const preferred = voices.find(v =>
@@ -484,33 +506,36 @@
             window.speechSynthesis.onvoiceschanged = pickVoice;
         }
 
-        utt.onend   = afterSpeak;
-        utt.onerror = (e) => {
-            console.warn('[TTS] Error:', e.error);
-            afterSpeak();
+        utt.onend = () => {
+            clearTTSTimer();
+            if (active) {
+                // Short natural pause between sentences
+                setTimeout(speakNextChunk, 150);
+            }
         };
 
-        // ── Chrome watchdog: Chrome silently stops TTS on long texts ──
-        // Estimate: ~130 words per minute → ~2.2 chars/sec at rate 1.05
-        const charRate    = 13;   // chars per second (conservative)
-        const estimatedMs = Math.max(4000, (clean.length / charRate) * 1000);
-        ttsTimer = setTimeout(() => {
-            console.warn('[TTS] Watchdog fired — forcing afterSpeak');
-            window.speechSynthesis.cancel();
-            afterSpeak();
-        }, estimatedMs + 3000);
+        utt.onerror = (e) => {
+            console.warn('[TTS] Error on chunk (', chunkText.substring(0, 10), '...):', e.error);
+            clearTTSTimer();
+            if (!active) return;
+            
+            if (e.error !== 'interrupted' && e.error !== 'canceled') {
+                // If it's a random glitch, just silently move to next chunk
+                setTimeout(speakNextChunk, 150);
+            } else {
+                // Interrupted usually means we cancelled it deliberately
+                afterSpeak();
+            }
+        };
 
-        // Chrome pauses TTS after ~15s — keep it alive
-        resumeTimer = setInterval(() => {
-            if (!window.speechSynthesis.speaking) {
-                clearInterval(resumeTimer);
-                resumeTimer = null;
-                return;
-            }
-            if (window.speechSynthesis.paused) {
-                window.speechSynthesis.resume();
-            }
-        }, 5000);
+        // Watchdog per chunk
+        const charRate = 12;
+        const estimatedMs = Math.max(3000, (chunkText.length / charRate) * 1000);
+        ttsTimer = setTimeout(() => {
+            console.warn('[TTS] Watchdog fired on chunk — forcing next');
+            window.speechSynthesis.cancel();
+            speakNextChunk();
+        }, estimatedMs + 2500);
 
         window.speechSynthesis.speak(utt);
     }
@@ -527,8 +552,7 @@
     }
 
     function clearTTSTimer() {
-        if (ttsTimer)    { clearTimeout(ttsTimer);    ttsTimer    = null; }
-        if (resumeTimer) { clearInterval(resumeTimer); resumeTimer = null; }
+        if (ttsTimer) { clearTimeout(ttsTimer); ttsTimer = null; }
     }
 
     // ─── Socket events ───
