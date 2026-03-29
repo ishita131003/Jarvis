@@ -273,7 +273,7 @@
         <div class="status-label" id="statusLabel">Tap orb to start call</div>
 
         <!-- Start hint -->
-        <div class="start-hint" id="startHint">tap once · then just speak naturally</div>
+        <div class="start-hint" id="startHint">tap once to start conversation</div>
 
         <!-- End call -->
         <button class="end-btn" id="endBtn">
@@ -287,11 +287,11 @@
         </button>
     </div>
 
-    <!-- Shown when browser doesn't support Web Speech API -->
+    <!-- Shown when browser doesn't support required APIs -->
     <div class="no-support" id="noSupport">
-        <strong>Voice not supported</strong><br>
-        Please use <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> on desktop
-        to use voice call mode. Safari and Firefox do not support the Web Speech API.
+        <strong>Voice interaction not available</strong><br>
+        Your browser does not support the necessary speech or audio features. 
+        Please ensure you have a working microphone and are using a modern browser.
     </div>
 
     <script>
@@ -321,7 +321,9 @@
 
     // ─── Check browser support ───
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR || !window.speechSynthesis) {
+    let useFallbackSTT = !SR;
+
+    if (!window.speechSynthesis) {
         document.getElementById('mainUI').style.display = 'none';
         noSupport.style.display = 'block';
     }
@@ -424,17 +426,66 @@
         };
     }
 
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    async function setupFallbackSTT() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.warn("[Fallback STT] getUserMedia not supported");
+            return false;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            };
+            mediaRecorder.onstop = () => {
+                let blob = new Blob(audioChunks, { type: 'audio/webm' });
+                audioChunks = [];
+                let reader = new FileReader();
+                reader.onloadend = () => {
+                    socket.emit('transcribe_audio', { audio: reader.result });
+                };
+                reader.readAsDataURL(blob);
+            };
+            return true;
+        } catch (e) {
+            console.error("[Fallback STT] Error:", e);
+            statusLabel.textContent = 'Mic access denied';
+            return false;
+        }
+    }
+
     function startListening() {
-        if (!active || !recognition) return;
-        // Only block if AI is still thinking — speaking exit is handled by afterSpeak()
+        if (!active) return;
         if (phase === 'thinking') return;
+        
+        if (useFallbackSTT) {
+            if (!mediaRecorder) return;
+            setPhase('listening');
+            try {
+                audioChunks = [];
+                mediaRecorder.start();
+                // Override status label to guide user to tap to stop
+                statusLabel.textContent = 'Listening... (Tap to send)';
+            } catch (err) {
+                console.warn('[Fallback STT] start() failed:', err.message);
+                if (err.name === 'InvalidStateError') {
+                    setPhase('listening');
+                    statusLabel.textContent = 'Listening... (Tap to send)';
+                }
+            }
+            return;
+        }
+
+        if (!recognition) return;
         setPhase('listening');
         try {
             recognition.start();
         } catch (err) {
             console.warn('[STT] start() failed:', err.message);
             if (err.name === 'InvalidStateError') {
-                // Already running — that's fine, just update the UI
                 setPhase('listening');
             } else {
                 setTimeout(startListening, 800);
@@ -443,6 +494,10 @@
     }
 
     function stopListening() {
+        if (useFallbackSTT && mediaRecorder && mediaRecorder.state === 'recording') {
+            try { mediaRecorder.stop(); } catch (_) {}
+            return;
+        }
         if (!recognition) return;
         try { recognition.abort(); } catch (_) {}
     }
@@ -564,24 +619,36 @@
         speak(data.text || '');
     });
 
-    // Ignore bot_message while in idle (not in a call)
-    // (handled naturally because speak() checks active flag)
+    socket.on('stt_failed', (data) => {
+        console.warn('[Socket] Fallback STT empty or failed:', data.message);
+        // Start listening again naturally
+        afterSpeak();
+    });
 
     // ─── Orb tap — START CALL ───
-    orbRing.addEventListener('click', () => {
-        if (active) return;   // already in call
-        if (!SR || !window.speechSynthesis) return;
+    orbRing.addEventListener('click', async () => {
+        if (!active) {
+            if (!window.speechSynthesis) return;
 
-        active = true;
-        startHint.classList.add('hidden');
+            active = true;
+            startHint.classList.add('hidden');
 
-        setupRecognition();
+            if (useFallbackSTT) {
+                let ready = await setupFallbackSTT();
+                if (!ready) { active = false; return; }
+            } else {
+                setupRecognition();
+            }
 
-        // CRITICAL: Call speak() directly in user gesture context.
-        // This single speak() call both unlocks TTS AND starts the greeting.
-        // Using setTimeout would risk Chrome blocking the TTS activation.
-        // The primer utterance is no longer needed because speak() itself is called here.
-        speak("Hello Ishita, I'm Jarvis. How can I help you?");
+            // CRITICAL: Call speak() directly in user gesture context.
+            speak("Hello Ishita, I'm Jarvis. How can I help you?");
+        } else {
+            // If already active, handle push-to-stop for fallback mechanism
+            if (useFallbackSTT && phase === 'listening' && mediaRecorder && mediaRecorder.state === 'recording') {
+                setPhase('thinking');
+                mediaRecorder.stop();
+            }
+        }
     });
 
 

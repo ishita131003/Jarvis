@@ -115,6 +115,31 @@ def on_send_message(data):
 
     socketio.start_background_task(process_input, user_input, file_data, file_type, sid)
 
+@socketio.on('transcribe_audio')
+def on_transcribe_audio(data):
+    """Fallback STT: receive audio blob, transcribe with Groq, and process."""
+    sid = request.sid
+    audio_base64 = data.get('audio')
+    if not audio_base64: return
+    
+    if "," in audio_base64:
+        audio_base64 = audio_base64.split(",")[1]
+    
+    try:
+        audio_bytes = base64.b64decode(audio_base64)
+        from brain.groq_stt import transcribe_audio_groq
+        transcript = transcribe_audio_groq(audio_bytes)
+        print(f"[Groq STT Fallback] Heard: {transcript}")
+        
+        if transcript and transcript.strip():
+            emit('user_message', {'text': transcript, 'file': None, 'file_type': 'image', 'file_name': ''})
+            socketio.start_background_task(process_input, transcript, None, 'image', sid)
+        else:
+            emit('stt_failed', {'message': 'Could not catch that.'})
+    except Exception as e:
+        print(f"[Transcribe Error] {e}")
+        emit('stt_failed', {'message': str(e)})
+
 def process_input(user_input, file_data=None, file_type='image', sid=None):
     """Process user input through commands or AI."""
     import traceback

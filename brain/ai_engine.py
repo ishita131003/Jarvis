@@ -8,6 +8,12 @@ Added robustness for 429 (Rate Limit) errors and model fallbacks.
 import os
 import requests
 from dotenv import load_dotenv
+
+try:
+    import groq
+except ImportError:
+    groq = None
+
 try:
     import eventlet
 except ImportError:
@@ -18,6 +24,7 @@ load_dotenv()
 # ─── API Keys ─────────────────────────────────────────────────────────────────
 HF_API_KEY         = os.getenv("HF_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+GROQ_API_KEY       = os.getenv("GROQ_API_KEY")
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 HF_URL = "https://api-inference.huggingface.co/models/{model}"
@@ -34,6 +41,11 @@ OR_MODELS = [
     "qwen/qwen3-coder:free",
     "meta-llama/llama-3.2-3b-instruct:free",
     "openrouter/auto:free" 
+]
+
+GROQ_MODELS = [
+    "llama-3.3-70b-versatile",
+    "mixtral-8x7b-32768"
 ]
 
 HF_MODELS = [
@@ -82,7 +94,27 @@ def _sleep(seconds):
     else:
         import time; time.sleep(seconds)
 
-# _gemini_call removed to prioritize Llama as requested.
+def _groq_call(messages: list) -> str | None:
+    if not groq or not GROQ_API_KEY:
+        return None
+    try:
+        client = groq.Groq(api_key=GROQ_API_KEY)
+        for model in GROQ_MODELS:
+            print(f"[AI] Trying Groq: {model}")
+            try:
+                completion = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.7,
+                )
+                if completion.choices and completion.choices[0].message.content:
+                    return completion.choices[0].message.content.strip()
+            except Exception as e:
+                print(f"[AI] Groq {model} Exception: {e}")
+                continue
+    except Exception as e:
+        print(f"[AI] Groq Initialization Exception: {e}")
+    return None
 
 def _openrouter_call(messages: list, max_tokens: int, pass_num: int = 1) -> str | None:
     headers = {
@@ -169,7 +201,14 @@ def ask_ai(question: str, lang: str = "en", search_context: str = "", history: l
     pass_num = 1
     max_passes = 2
     while pass_num <= max_passes:
-        print(f"[AI] Attempting Pass {pass_num} of all OpenRouter models...")
+        print(f"[AI] Attempting Pass {pass_num} of all models...")
+        
+        # Try Groq first in the fallback chain if available
+        if GROQ_API_KEY:
+             result = _groq_call(messages)
+             if result:
+                 return result
+
         result = _openrouter_call(messages, tokens, pass_num=pass_num)
         if result:
             return result
