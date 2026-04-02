@@ -450,6 +450,8 @@
     let analyser      = null;
     let dataArray     = null;
     let source        = null;
+    let silenceTimer  = null;
+    let speechDetected = false;
 
     async function setupFallbackSTT() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -522,6 +524,40 @@
             }
             
             analyser.getByteFrequencyData(dataArray);
+
+            // --- Auto-Silence Detection (VAD) ---
+            if (useFallbackSTT && phase === 'listening' && mediaRecorder && mediaRecorder.state === 'recording') {
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i];
+                }
+                let average = sum / dataArray.length;
+                
+                // If volume is significant, mark as speech detected
+                // (Threshold of 15 is usually above background noise but below speech)
+                if (average > 15) { 
+                    speechDetected = true;
+                }
+
+                // If we've heard speech and now it's quiet (< 6) for 1.6 seconds
+                if (speechDetected && average < 6) {
+                    if (!silenceTimer) {
+                        silenceTimer = setTimeout(() => {
+                            console.log("[VAD] Silence detected. Stopping...");
+                            stopListening();
+                            setPhase('thinking');
+                        }, 1600);
+                    }
+                } else if (average > 10) {
+                    // Reset timer if volume picks up again
+                    if (silenceTimer) {
+                        clearTimeout(silenceTimer);
+                        silenceTimer = null;
+                    }
+                }
+            }
+            // ------------------------------------
+
             ctx.clearRect(0, 0, W, H);
             
             const barWidth = (W / dataArray.length) * 2.5;
@@ -546,14 +582,17 @@
             setPhase('listening');
             try {
                 audioChunks = [];
+                speechDetected = false;
+                if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+                
                 mediaRecorder.start();
-                // Override status label to guide user to tap to stop
-                statusLabel.textContent = 'Listening... (Tap to send)';
+                // Inform user it's automatic now
+                statusLabel.textContent = 'Listening... (Auto-sensing)';
             } catch (err) {
                 console.warn('[Fallback STT] start() failed:', err.message);
                 if (err.name === 'InvalidStateError') {
                     setPhase('listening');
-                    statusLabel.textContent = 'Listening... (Tap to send)';
+                    statusLabel.textContent = 'Listening...';
                 }
             }
             return;
