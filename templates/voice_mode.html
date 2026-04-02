@@ -527,28 +527,30 @@
 
             // --- Auto-Silence Detection (VAD) ---
             if (useFallbackSTT && phase === 'listening' && mediaRecorder && mediaRecorder.state === 'recording') {
-                let sum = 0;
+                let peak = 0;
                 for (let i = 0; i < dataArray.length; i++) {
-                    sum += dataArray[i];
+                    if (dataArray[i] > peak) {
+                        peak = dataArray[i];
+                    }
                 }
-                let average = sum / dataArray.length;
                 
-                // If volume is significant, mark as speech detected
-                // (Threshold of 15 is usually above background noise but below speech)
-                if (average > 15) { 
+                // Using max peak amplitude is much more reliable than average
+                // Speech almost always generates frequency peaks > 80
+                // Background fan/static noise usually stays below 45
+                if (peak > 80) { 
                     speechDetected = true;
                 }
 
-                // If we've heard speech and now it's quiet (< 6) for 1.6 seconds
-                if (speechDetected && average < 6) {
+                // If peak stays below 40 for 2.0 seconds after speaking
+                if (speechDetected && peak < 40) {
                     if (!silenceTimer) {
                         silenceTimer = setTimeout(() => {
                             console.log("[VAD] Silence detected. Stopping...");
                             stopListening();
                             setPhase('thinking');
-                        }, 1600);
+                        }, 2000);
                     }
-                } else if (average > 10) {
+                } else if (peak > 55) {
                     // Reset timer if volume picks up again
                     if (silenceTimer) {
                         clearTimeout(silenceTimer);
