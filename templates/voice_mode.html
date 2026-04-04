@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,7 +16,11 @@
             --red: #ff4b2b;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             background: #050505;
@@ -51,6 +56,8 @@
         .orb-ring {
             width: 220px;
             height: 220px;
+            aspect-ratio: 1 / 1;
+            flex-shrink: 0;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -81,15 +88,24 @@
             animation: spin-rev 12s linear infinite;
         }
 
-        @keyframes spin     { to { transform: rotate(360deg); } }
-        @keyframes spin-rev { to { transform: rotate(-360deg); } }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin-rev {
+            to {
+                transform: rotate(-360deg);
+            }
+        }
 
         .orb {
             width: 200px;
             height: 200px;
             border-radius: 50%;
-            background: radial-gradient(circle at 38% 38%, var(--cyan) 0%, rgba(0,210,255,.15) 65%, transparent 100%);
-            box-shadow: 0 0 60px rgba(0,210,255,.5), 0 0 120px rgba(0,210,255,.15);
+            background: radial-gradient(circle at 38% 38%, var(--cyan) 0%, rgba(0, 210, 255, .15) 65%, transparent 100%);
+            box-shadow: 0 0 60px rgba(0, 210, 255, .5), 0 0 120px rgba(0, 210, 255, .15);
             animation: breathe 3s ease-in-out infinite;
             transition: background 0.5s, box-shadow 0.5s;
             display: flex;
@@ -105,43 +121,80 @@
         }
 
         @keyframes breathe {
-            0%, 100% { transform: scale(1);    opacity: 0.85; }
-            50%       { transform: scale(1.06); opacity: 1;   }
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.85;
+            }
+
+            50% {
+                transform: scale(1.06);
+                opacity: 1;
+            }
         }
 
         /* LISTENING state */
         body.listening .orb {
-            background: radial-gradient(circle at 38% 38%, var(--green) 0%, rgba(0,255,136,.15) 65%, transparent 100%);
-            box-shadow: 0 0 80px rgba(0,255,136,.6), 0 0 160px rgba(0,255,136,.15);
+            background: radial-gradient(circle at 38% 38%, var(--green) 0%, rgba(0, 255, 136, .15) 65%, transparent 100%);
+            box-shadow: 0 0 80px rgba(0, 255, 136, .6), 0 0 160px rgba(0, 255, 136, .15);
             animation: pulse-listen 0.8s ease-in-out infinite;
         }
-        body.listening .orb-ring::before { border-color: var(--green); opacity: 0.5; }
+
+        body.listening .orb-ring::before {
+            border-color: var(--green);
+            opacity: 0.5;
+        }
 
         @keyframes pulse-listen {
-            0%, 100% { transform: scale(1); }
-            50%       { transform: scale(1.09); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.09);
+            }
         }
 
         /* THINKING state */
         body.thinking .orb {
-            background: radial-gradient(circle at 38% 38%, var(--yellow) 0%, rgba(255,204,0,.15) 65%, transparent 100%);
-            box-shadow: 0 0 80px rgba(255,204,0,.5), 0 0 160px rgba(255,204,0,.1);
+            background: radial-gradient(circle at 38% 38%, var(--yellow) 0%, rgba(255, 204, 0, .15) 65%, transparent 100%);
+            box-shadow: 0 0 80px rgba(255, 204, 0, .5), 0 0 160px rgba(255, 204, 0, .1);
             animation: spin-orb 1.2s linear infinite;
         }
-        body.thinking .orb-ring::before { border-color: var(--yellow); opacity: 0.5; }
 
-        @keyframes spin-orb { to { transform: rotate(360deg); } }
+        body.thinking .orb-ring::before {
+            border-color: var(--yellow);
+            opacity: 0.5;
+        }
+
+        @keyframes spin-orb {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* SPEAKING state */
         body.speaking .orb {
-            background: radial-gradient(circle at 38% 38%, var(--cyan) 0%, rgba(0,210,255,.3) 65%, transparent 100%);
-            box-shadow: 0 0 100px rgba(0,210,255,.7), 0 0 200px rgba(0,210,255,.2);
+            background: radial-gradient(circle at 38% 38%, var(--cyan) 0%, rgba(0, 210, 255, .3) 65%, transparent 100%);
+            box-shadow: 0 0 100px rgba(0, 210, 255, .7), 0 0 200px rgba(0, 210, 255, .2);
             animation: speak-pulse 0.4s ease-in-out infinite;
         }
 
         @keyframes speak-pulse {
-            0%, 100% { transform: scale(1);    box-shadow: 0 0 100px rgba(0,210,255,.7); }
-            50%       { transform: scale(1.07); box-shadow: 0 0 130px rgba(0,210,255,.9); }
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 100px rgba(0, 210, 255, .7);
+            }
+
+            50% {
+                transform: scale(1.07);
+                box-shadow: 0 0 130px rgba(0, 210, 255, .9);
+            }
         }
 
         /* ── STATUS LABEL ── */
@@ -155,21 +208,32 @@
             transition: color 0.4s;
         }
 
-        body.listening .status-label { color: var(--green); }
-        body.thinking  .status-label { color: var(--yellow); }
-        body.speaking  .status-label { color: var(--cyan); }
+        body.listening .status-label {
+            color: var(--green);
+        }
+
+        body.thinking .status-label {
+            color: var(--yellow);
+        }
+
+        body.speaking .status-label {
+            color: var(--cyan);
+        }
 
         /* ── START HINT (shown before first tap) ── */
         .start-hint {
             font-size: 0.75rem;
-            color: rgba(0,210,255,.45);
+            color: rgba(0, 210, 255, .45);
             letter-spacing: 2px;
             text-transform: uppercase;
             margin-top: -16px;
             transition: opacity 0.4s;
         }
 
-        .start-hint.hidden { opacity: 0; pointer-events: none; }
+        .start-hint.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
 
         /* ── SOUND BARS (mic visualiser) ── */
         .bars {
@@ -180,12 +244,19 @@
             opacity: 0;
             transition: opacity 0.4s;
         }
+
         canvas#vizCanvas {
             width: 140px;
             height: 40px;
         }
-        body.listening .bars  { opacity: 1; }
-        body.speaking  .bars  { opacity: 1; }
+
+        body.listening .bars {
+            opacity: 1;
+        }
+
+        body.speaking .bars {
+            opacity: 1;
+        }
 
         .bar {
             width: 4px;
@@ -193,22 +264,51 @@
             background: var(--cyan);
             animation: bar-dance 0.9s ease-in-out infinite;
         }
-        body.listening .bar { background: var(--green); }
 
-        .bar:nth-child(1) { animation-delay: 0s;    height: 8px; }
-        .bar:nth-child(2) { animation-delay: 0.15s; height: 16px; }
-        .bar:nth-child(3) { animation-delay: 0.3s;  height: 24px; }
-        .bar:nth-child(4) { animation-delay: 0.15s; height: 16px; }
-        .bar:nth-child(5) { animation-delay: 0s;    height: 8px; }
+        body.listening .bar {
+            background: var(--green);
+        }
+
+        .bar:nth-child(1) {
+            animation-delay: 0s;
+            height: 8px;
+        }
+
+        .bar:nth-child(2) {
+            animation-delay: 0.15s;
+            height: 16px;
+        }
+
+        .bar:nth-child(3) {
+            animation-delay: 0.3s;
+            height: 24px;
+        }
+
+        .bar:nth-child(4) {
+            animation-delay: 0.15s;
+            height: 16px;
+        }
+
+        .bar:nth-child(5) {
+            animation-delay: 0s;
+            height: 8px;
+        }
 
         @keyframes bar-dance {
-            0%, 100% { transform: scaleY(0.3); }
-            50%       { transform: scaleY(1); }
+
+            0%,
+            100% {
+                transform: scaleY(0.3);
+            }
+
+            50% {
+                transform: scaleY(1);
+            }
         }
 
         /* ── END CALL BUTTON ── */
         .end-btn {
-            background: rgba(255,75,43,.08);
+            background: rgba(255, 75, 43, .08);
             border: 1px solid var(--red);
             color: var(--red);
             padding: 13px 38px;
@@ -223,17 +323,23 @@
             gap: 10px;
             font-family: 'Outfit', sans-serif;
         }
+
         .end-btn:hover {
             background: var(--red);
             color: #fff;
             box-shadow: 0 0 24px var(--red);
         }
-        .end-btn svg { width: 17px; height: 17px; fill: currentColor; }
+
+        .end-btn svg {
+            width: 17px;
+            height: 17px;
+            fill: currentColor;
+        }
 
         /* ── NOT SUPPORTED WARNING ── */
         .no-support {
             display: none;
-            background: rgba(255,75,43,.12);
+            background: rgba(255, 75, 43, .12);
             border: 1px solid var(--red);
             border-radius: 12px;
             padding: 20px 30px;
@@ -245,6 +351,7 @@
         }
     </style>
 </head>
+
 <body>
     <canvas id="particles"></canvas>
 
@@ -253,13 +360,12 @@
         <div class="orb-ring" id="orbRing">
             <div class="orb" id="orb">
                 <!-- mic icon -->
-                <svg class="orb-icon" id="orbIcon" viewBox="0 0 24 24" fill="none"
-                     stroke="rgba(255,255,255,0.85)" stroke-width="1.5"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="2" width="6" height="11" rx="3"/>
-                    <path d="M5 10a7 7 0 0 0 14 0"/>
-                    <line x1="12" y1="19" x2="12" y2="22"/>
-                    <line x1="8"  y1="22" x2="16" y2="22"/>
+                <svg class="orb-icon" id="orbIcon" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)"
+                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="2" width="6" height="11" rx="3" />
+                    <path d="M5 10a7 7 0 0 0 14 0" />
+                    <line x1="12" y1="19" x2="12" y2="22" />
+                    <line x1="8" y1="22" x2="16" y2="22" />
                 </svg>
             </div>
         </div>
@@ -281,7 +387,7 @@
                 <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36
                          1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45
                          1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1
-                         1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                         1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
             </svg>
             End Call
         </button>
@@ -290,532 +396,533 @@
     <!-- Shown when browser doesn't support required APIs -->
     <div class="no-support" id="noSupport">
         <strong>Voice interaction not available</strong><br>
-        Your browser does not support the necessary speech or audio features. 
+        Your browser does not support the necessary speech or audio features.
         Please ensure you have a working microphone and are using a modern browser.
     </div>
 
     <script>
-    // ════════════════════════════════════════════════════════════════
-    //  J.A.R.V.I.S.  —  Pure Call Mode
-    //  Flow: idle → [tap] → speak greeting → listen → send → speak → listen → …
-    //  No text displayed. Just pure audio conversation.
-    // ════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════
+        //  J.A.R.V.I.S.  —  Pure Call Mode
+        //  Flow: idle → [tap] → speak greeting → listen → send → speak → listen → …
+        //  No text displayed. Just pure audio conversation.
+        // ════════════════════════════════════════════════════════════════
 
-    const socket = io({ transports: ['websocket', 'polling'] });
+        const socket = io({ transports: ['websocket', 'polling'] });
 
-    // ─── DOM refs ───
-    const body        = document.body;
-    const orbRing     = document.getElementById('orbRing');
-    const statusLabel = document.getElementById('statusLabel');
-    const startHint   = document.getElementById('startHint');
-    const endBtn      = document.getElementById('endBtn');
-    const noSupport   = document.getElementById('noSupport');
+        // ─── DOM refs ───
+        const body = document.body;
+        const orbRing = document.getElementById('orbRing');
+        const statusLabel = document.getElementById('statusLabel');
+        const startHint = document.getElementById('startHint');
+        const endBtn = document.getElementById('endBtn');
+        const noSupport = document.getElementById('noSupport');
 
-    // ─── State ───
-    // 'idle' | 'listening' | 'thinking' | 'speaking'
-    let phase  = 'idle';
-    let active = false;      // true once user taps orb
-    let recognition = null;
-    let ttsTimer    = null;
-    let resumeTimer = null;
+        // ─── State ───
+        // 'idle' | 'listening' | 'thinking' | 'speaking'
+        let phase = 'idle';
+        let active = false;      // true once user taps orb
+        let recognition = null;
+        let ttsTimer = null;
+        let resumeTimer = null;
 
-    // ─── Check browser support ───
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let useFallbackSTT = !SR;
+        // ─── Check browser support ───
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let useFallbackSTT = !SR;
 
-    if (!window.speechSynthesis) {
-        document.getElementById('mainUI').style.display = 'none';
-        noSupport.style.display = 'block';
-    }
-
-    // ─── Helpers ───
-    function setPhase(p) {
-        phase = p;
-        // Remove all state classes
-        body.classList.remove('listening', 'thinking', 'speaking');
-        if (p !== 'idle') body.classList.add(p);
-
-        const labels = {
-            idle:      'Tap orb to start call',
-            listening: 'Listening...',
-            thinking:  'Thinking...',
-            speaking:  'Speaking...',
-            error:     'Network Error (API Limit) - Waiting...'
-        };
-        statusLabel.textContent = labels[p] || statusLabel.textContent;
-    }
-
-    function cleanText(text) {
-        // Strip markdown chars that don't read well aloud
-        return text
-            .replace(/[*#_`~=\[\]]/g, '')
-            .replace(/https?:\/\/\S+/g, '')   // strip URLs
-            .replace(/\s{2,}/g, ' ')
-            .trim();
-    }
-
-    // ─── Speech Recognition setup ───
-    function setupRecognition() {
-        if (!SR) return;
-        recognition = new SR();
-        recognition.continuous    = false;  // single utterance — simpler & more reliable
-        recognition.interimResults = false;
-        recognition.lang           = 'en-US';
-        
-        let lastErrorTime = 0;
-        let networkErrorCount = 0;
-
-        recognition.onstart = () => {
-            console.log('[STT] Started');
-            setPhase('listening');
-        };
-
-        recognition.onresult = (e) => {
-            let transcript = '';
-            for (let i = e.resultIndex; i < e.results.length; i++) {
-                if (e.results[i].isFinal) {
-                    transcript += e.results[i][0].transcript;
-                }
-            }
-            transcript = transcript.trim();
-            if (!transcript) {
-                // Nothing heard — listen again
-                setTimeout(startListening, 300);
-                return;
-            }
-            console.log('[STT] Heard:', transcript);
-            setPhase('thinking');
-            socket.emit('send_message', { text: transcript });
-        };
-
-        recognition.onerror = (e) => {
-            console.warn('[STT] Error:', e.error);
-            lastErrorTime = Date.now();
-            
-            if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-                statusLabel.textContent = 'Mic blocked — please allow microphone access';
-                active = false;
-                return;
-            }
-            if (e.error === 'network') {
-                networkErrorCount++;
-                console.warn('[STT] Network error detected. Count:', networkErrorCount);
-                
-                // If we get multiple network errors or if we suspect it's Brave, force fallback
-                if (networkErrorCount >= 1) {
-                    console.log('[STT] Switching to Groq Fallback STT...');
-                    statusLabel.textContent = 'Switching to Groq Engine...';
-                    useFallbackSTT = true;
-                    // Try to setup and start immediately
-                    setupFallbackSTT().then(ready => {
-                        if (ready && active) {
-                            setTimeout(startListening, 500);
-                        }
-                    });
-                    return;
-                }
-                
-                statusLabel.textContent = 'Connecting to Speech Engine...';
-                if (active && phase === 'listening') {
-                    setTimeout(startListening, 2000);
-                }
-                return;
-            }
-            // Only restart on no-speech errors while we're in listening idle
-            if (active && phase === 'listening') {
-                setTimeout(startListening, 600);
-            }
-        };
-
-        recognition.onend = () => {
-            console.log('[STT] Ended, phase=', phase);
-            
-            // If we just had an error, let the onerror handler's setTimeout do the restart
-            // to respect our backoff logic.
-            if (Date.now() - lastErrorTime < 500) {
-                return;
-            }
-            
-            // Auto-restart ONLY when we're genuinely still in listening state
-            // (mic timed out with no speech, or brief gap — restart the cycle)
-            if (active && phase === 'listening') {
-                setTimeout(startListening, 400);
-            }
-        };
-    }
-
-    let mediaRecorder = null;
-    let audioChunks   = [];
-    let audioCtx      = null;
-    let analyser      = null;
-    let dataArray     = null;
-    let source        = null;
-    let silenceTimer  = null;
-    let speechDetected = false;
-
-    async function setupFallbackSTT() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.warn("[Fallback STT] getUserMedia not supported");
-            return false;
+        if (!window.speechSynthesis) {
+            document.getElementById('mainUI').style.display = 'none';
+            noSupport.style.display = 'block';
         }
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
-            // Setup Visualiser
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
-            source   = audioCtx.createMediaStreamSource(stream);
-            source.connect(analyser);
-            analyser.fftSize = 64;
-            dataArray = new Uint8Array(analyser.frequencyBinCount);
-            drawVisualiser();
 
-            // Setup Recorder
-            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-                             ? 'audio/webm;codecs=opus' 
-                             : 'audio/webm';
-            
-            mediaRecorder = new MediaRecorder(stream, { mimeType });
-            console.log("[Fallback STT] Using MIME type:", mimeType);
+        // ─── Helpers ───
+        function setPhase(p) {
+            phase = p;
+            // Remove all state classes
+            body.classList.remove('listening', 'thinking', 'speaking');
+            if (p !== 'idle') body.classList.add(p);
 
-            mediaRecorder.ondataavailable = e => {
-                if (e.data.size > 0) {
-                    audioChunks.push(e.data);
-                    console.log("[Fallback STT] Received chunk:", e.data.size, "bytes");
-                }
+            const labels = {
+                idle: 'Tap orb to start call',
+                listening: 'Listening...',
+                thinking: 'Thinking...',
+                speaking: 'Speaking...',
+                error: 'Network Error (API Limit) - Waiting...'
             };
-            mediaRecorder.onstop = () => {
-                let blob = new Blob(audioChunks, { type: mimeType });
-                console.log("[Fallback STT] Exported blob:", blob.size, "bytes");
-                audioChunks = [];
-                
-                if (blob.size < 500) {
-                    console.warn("[Fallback STT] Recording too short/empty");
-                    setPhase('idle');
-                    startListening();
-                    return;
-                }
-
-                let reader = new FileReader();
-                reader.onloadend = () => {
-                    socket.emit('transcribe_audio', { audio: reader.result });
-                };
-                reader.readAsDataURL(blob);
-            };
-            return true;
-        } catch (e) {
-            console.error("[Fallback STT] Error:", e);
-            statusLabel.textContent = 'Mic access denied';
-            return false;
-        }
-    }
-
-    function drawVisualiser() {
-        const canvas = document.getElementById('vizCanvas');
-        const ctx    = canvas.getContext('2d');
-        const W      = canvas.width;
-        const H      = canvas.height;
-
-        function render() {
-            requestAnimationFrame(render);
-            if (phase !== 'listening' && phase !== 'speaking') {
-                ctx.clearRect(0,0,W,H);
-                return;
-            }
-            
-            analyser.getByteFrequencyData(dataArray);
-
-            // --- Auto-Silence Detection (VAD) ---
-            if (useFallbackSTT && phase === 'listening' && mediaRecorder && mediaRecorder.state === 'recording') {
-                let peak = 0;
-                for (let i = 0; i < dataArray.length; i++) {
-                    if (dataArray[i] > peak) {
-                        peak = dataArray[i];
-                    }
-                }
-                
-                // Using max peak amplitude is much more reliable than average
-                // Speech almost always generates frequency peaks > 80
-                // Background fan/static noise usually stays below 45
-                if (peak > 80) { 
-                    speechDetected = true;
-                }
-
-                // If peak stays below 40 for 2.0 seconds after speaking
-                if (speechDetected && peak < 40) {
-                    if (!silenceTimer) {
-                        silenceTimer = setTimeout(() => {
-                            console.log("[VAD] Silence detected. Stopping...");
-                            stopListening();
-                            setPhase('thinking');
-                        }, 2000);
-                    }
-                } else if (peak > 55) {
-                    // Reset timer if volume picks up again
-                    if (silenceTimer) {
-                        clearTimeout(silenceTimer);
-                        silenceTimer = null;
-                    }
-                }
-            }
-            // ------------------------------------
-
-            ctx.clearRect(0, 0, W, H);
-            
-            const barWidth = (W / dataArray.length) * 2.5;
-            let x = 0;
-            
-            for (let i = 0; i < dataArray.length; i++) {
-                const barHeight = (dataArray[i] / 255) * H;
-                ctx.fillStyle = phase === 'listening' ? '#00ff88' : '#00d2ff';
-                ctx.fillRect(x, H - barHeight, barWidth, barHeight);
-                x += barWidth + 2;
-            }
-        }
-        render();
-    }
-
-    function startListening() {
-        if (!active) return;
-        if (phase === 'thinking') return;
-        
-        if (useFallbackSTT) {
-            if (!mediaRecorder) return;
-            setPhase('listening');
-            try {
-                audioChunks = [];
-                speechDetected = false;
-                if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-                
-                mediaRecorder.start();
-                // Inform user it's automatic now
-                statusLabel.textContent = 'Listening... (Auto-sensing)';
-            } catch (err) {
-                console.warn('[Fallback STT] start() failed:', err.message);
-                if (err.name === 'InvalidStateError') {
-                    setPhase('listening');
-                    statusLabel.textContent = 'Listening...';
-                }
-            }
-            return;
+            statusLabel.textContent = labels[p] || statusLabel.textContent;
         }
 
-        if (!recognition) return;
-        setPhase('listening');
-        try {
-            recognition.start();
-        } catch (err) {
-            console.warn('[STT] start() failed:', err.message);
-            if (err.name === 'InvalidStateError') {
+        function cleanText(text) {
+            // Strip markdown chars that don't read well aloud
+            return text
+                .replace(/[*#_`~=\[\]]/g, '')
+                .replace(/https?:\/\/\S+/g, '')   // strip URLs
+                .replace(/\s{2,}/g, ' ')
+                .trim();
+        }
+
+        // ─── Speech Recognition setup ───
+        function setupRecognition() {
+            if (!SR) return;
+            recognition = new SR();
+            recognition.continuous = false;  // single utterance — simpler & more reliable
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            let lastErrorTime = 0;
+            let networkErrorCount = 0;
+
+            recognition.onstart = () => {
+                console.log('[STT] Started');
                 setPhase('listening');
-            } else {
-                setTimeout(startListening, 800);
+            };
+
+            recognition.onresult = (e) => {
+                let transcript = '';
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    if (e.results[i].isFinal) {
+                        transcript += e.results[i][0].transcript;
+                    }
+                }
+                transcript = transcript.trim();
+                if (!transcript) {
+                    // Nothing heard — listen again
+                    setTimeout(startListening, 300);
+                    return;
+                }
+                console.log('[STT] Heard:', transcript);
+                setPhase('thinking');
+                socket.emit('send_message', { text: transcript });
+            };
+
+            recognition.onerror = (e) => {
+                console.warn('[STT] Error:', e.error);
+                lastErrorTime = Date.now();
+
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                    statusLabel.textContent = 'Mic blocked — please allow microphone access';
+                    active = false;
+                    return;
+                }
+                if (e.error === 'network') {
+                    networkErrorCount++;
+                    console.warn('[STT] Network error detected. Count:', networkErrorCount);
+
+                    // If we get multiple network errors or if we suspect it's Brave, force fallback
+                    if (networkErrorCount >= 1) {
+                        console.log('[STT] Switching to Groq Fallback STT...');
+                        statusLabel.textContent = 'Switching to Groq Engine...';
+                        useFallbackSTT = true;
+                        // Try to setup and start immediately
+                        setupFallbackSTT().then(ready => {
+                            if (ready && active) {
+                                setTimeout(startListening, 500);
+                            }
+                        });
+                        return;
+                    }
+
+                    statusLabel.textContent = 'Connecting to Speech Engine...';
+                    if (active && phase === 'listening') {
+                        setTimeout(startListening, 2000);
+                    }
+                    return;
+                }
+                // Only restart on no-speech errors while we're in listening idle
+                if (active && phase === 'listening') {
+                    setTimeout(startListening, 600);
+                }
+            };
+
+            recognition.onend = () => {
+                console.log('[STT] Ended, phase=', phase);
+
+                // If we just had an error, let the onerror handler's setTimeout do the restart
+                // to respect our backoff logic.
+                if (Date.now() - lastErrorTime < 500) {
+                    return;
+                }
+
+                // Auto-restart ONLY when we're genuinely still in listening state
+                // (mic timed out with no speech, or brief gap — restart the cycle)
+                if (active && phase === 'listening') {
+                    setTimeout(startListening, 400);
+                }
+            };
+        }
+
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let audioCtx = null;
+        let analyser = null;
+        let dataArray = null;
+        let source = null;
+        let silenceTimer = null;
+        let speechDetected = false;
+
+        async function setupFallbackSTT() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.warn("[Fallback STT] getUserMedia not supported");
+                return false;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Setup Visualiser
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                source = audioCtx.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 64;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                drawVisualiser();
+
+                // Setup Recorder
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                    ? 'audio/webm;codecs=opus'
+                    : 'audio/webm';
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType });
+                console.log("[Fallback STT] Using MIME type:", mimeType);
+
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) {
+                        audioChunks.push(e.data);
+                        console.log("[Fallback STT] Received chunk:", e.data.size, "bytes");
+                    }
+                };
+                mediaRecorder.onstop = () => {
+                    let blob = new Blob(audioChunks, { type: mimeType });
+                    console.log("[Fallback STT] Exported blob:", blob.size, "bytes");
+                    audioChunks = [];
+
+                    if (blob.size < 500) {
+                        console.warn("[Fallback STT] Recording too short/empty");
+                        setPhase('idle');
+                        startListening();
+                        return;
+                    }
+
+                    let reader = new FileReader();
+                    reader.onloadend = () => {
+                        socket.emit('transcribe_audio', { audio: reader.result });
+                    };
+                    reader.readAsDataURL(blob);
+                };
+                return true;
+            } catch (e) {
+                console.error("[Fallback STT] Error:", e);
+                statusLabel.textContent = 'Mic access denied';
+                return false;
             }
         }
-    }
 
-    function stopListening() {
-        if (useFallbackSTT && mediaRecorder && mediaRecorder.state === 'recording') {
-            try { mediaRecorder.stop(); } catch (_) {}
-            return;
-        }
-        if (!recognition) return;
-        try { recognition.abort(); } catch (_) {}
-    }
+        function drawVisualiser() {
+            const canvas = document.getElementById('vizCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
 
-    // ─── TTS: Jarvis speaks ───
-    let speakQueue = [];
+            function render() {
+                requestAnimationFrame(render);
+                if (phase !== 'listening' && phase !== 'speaking') {
+                    ctx.clearRect(0, 0, W, H);
+                    return;
+                }
 
-    function speak(text) {
-        if (!active || !window.speechSynthesis) return;
+                analyser.getByteFrequencyData(dataArray);
 
-        stopListening();
-        setPhase('speaking');
+                // --- Auto-Silence Detection (VAD) ---
+                if (useFallbackSTT && phase === 'listening' && mediaRecorder && mediaRecorder.state === 'recording') {
+                    let peak = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        if (dataArray[i] > peak) {
+                            peak = dataArray[i];
+                        }
+                    }
 
-        const clean = cleanText(text);
-        if (!clean) {
-            afterSpeak();
-            return;
-        }
+                    // Using max peak amplitude is much more reliable than average
+                    // Speech almost always generates frequency peaks > 80
+                    // Background fan/static noise usually stays below 45
+                    if (peak > 80) {
+                        speechDetected = true;
+                    }
 
-        window.speechSynthesis.cancel();
-        clearTTSTimer();
-        
-        // Chunk the text into sentences to bypass Chrome length limits and 'interrupted' bugs
-        // Split by punctuation (., !, ?) keeping the punctuation marks.
-        // Or if it's just a long string without punctuation, split by newlines.
-        const chunks = clean.match(/[^.!?\n]+[.!?\n]+/g) || [clean];
-        speakQueue = chunks.map(c => c.trim()).filter(c => c.length > 0);
-        
-        if (speakQueue.length === 0) {
-           speakQueue = [clean];
-        }
+                    // If peak stays below 40 for 2.0 seconds after speaking
+                    if (speechDetected && peak < 40) {
+                        if (!silenceTimer) {
+                            silenceTimer = setTimeout(() => {
+                                console.log("[VAD] Silence detected. Stopping...");
+                                stopListening();
+                                setPhase('thinking');
+                            }, 2000);
+                        }
+                    } else if (peak > 55) {
+                        // Reset timer if volume picks up again
+                        if (silenceTimer) {
+                            clearTimeout(silenceTimer);
+                            silenceTimer = null;
+                        }
+                    }
+                }
+                // ------------------------------------
 
-        speakNextChunk();
-    }
+                ctx.clearRect(0, 0, W, H);
 
-    function speakNextChunk() {
-        if (!active || speakQueue.length === 0) {
-            afterSpeak();
-            return;
-        }
+                const barWidth = (W / dataArray.length) * 2.5;
+                let x = 0;
 
-        const chunkText = speakQueue.shift();
-        const utt = new SpeechSynthesisUtterance(chunkText);
-        
-        const hindi = /[\u0900-\u097F]/.test(chunkText);
-        utt.lang  = hindi ? 'hi-IN' : 'en-US';
-        utt.rate  = 1.05;
-        utt.pitch = 1.0;
-
-        function pickVoice() {
-            const voices = window.speechSynthesis.getVoices();
-            const preferred = voices.find(v =>
-                v.lang.startsWith(hindi ? 'hi' : 'en') && v.name.includes('Google')
-            ) || voices.find(v =>
-                v.lang.startsWith(hindi ? 'hi' : 'en')
-            );
-            if (preferred) utt.voice = preferred;
-        }
-        pickVoice();
-        if (window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = pickVoice;
-        }
-
-        utt.onend = () => {
-            clearTTSTimer();
-            if (active) {
-                // Short natural pause between sentences
-                setTimeout(speakNextChunk, 150);
+                for (let i = 0; i < dataArray.length; i++) {
+                    const barHeight = (dataArray[i] / 255) * H;
+                    ctx.fillStyle = phase === 'listening' ? '#00ff88' : '#00d2ff';
+                    ctx.fillRect(x, H - barHeight, barWidth, barHeight);
+                    x += barWidth + 2;
+                }
             }
-        };
+            render();
+        }
 
-        utt.onerror = (e) => {
-            console.warn('[TTS] Error on chunk (', chunkText.substring(0, 10), '...):', e.error);
-            clearTTSTimer();
+        function startListening() {
             if (!active) return;
-            
-            if (e.error !== 'interrupted' && e.error !== 'canceled') {
-                // If it's a random glitch, just silently move to next chunk
-                setTimeout(speakNextChunk, 150);
-            } else {
-                // Interrupted usually means we cancelled it deliberately
-                afterSpeak();
-            }
-        };
-
-        // Watchdog per chunk
-        const charRate = 12;
-        const estimatedMs = Math.max(3000, (chunkText.length / charRate) * 1000);
-        ttsTimer = setTimeout(() => {
-            console.warn('[TTS] Watchdog fired on chunk — forcing next');
-            window.speechSynthesis.cancel();
-            speakNextChunk();
-        }, estimatedMs + 2500);
-
-        window.speechSynthesis.speak(utt);
-    }
-
-    function afterSpeak() {
-        clearTTSTimer();
-        if (!active) return;
-        console.log('[TTS] Done — going back to listening');
-        // CRITICAL: Reset phase BEFORE calling startListening.
-        // startListening() used to bail if phase==='speaking' — now we're safe.
-        phase = 'idle';
-        setPhase('idle');
-        setTimeout(startListening, 500);
-    }
-
-    function clearTTSTimer() {
-        if (ttsTimer) { clearTimeout(ttsTimer); ttsTimer = null; }
-    }
-
-    // ─── Socket events ───
-    socket.on('connect', () => console.log('[Socket] Connected'));
-    socket.on('disconnect', () => console.log('[Socket] Disconnected'));
-
-    socket.on('bot_message', (data) => {
-        console.log('[Socket] Bot replied:', data.text?.slice(0, 60));
-        speak(data.text || '');
-    });
-
-    socket.on('stt_failed', (data) => {
-        console.warn('[Socket] Fallback STT empty or failed:', data.message);
-        // Start listening again naturally
-        afterSpeak();
-    });
-
-    // ─── Orb tap — START CALL ───
-    orbRing.addEventListener('click', async () => {
-        if (!active) {
-            if (!window.speechSynthesis) return;
-
-            active = true;
-            startHint.classList.add('hidden');
-
-            // Quick check for Brave to set expectation
-            const isBrave = (navigator.brave && await navigator.brave.isBrave()) || false;
-            if (isBrave) {
-                console.log('[System] Brave detected. Native STT may fail, ready for fallback.');
-            }
+            if (phase === 'thinking') return;
 
             if (useFallbackSTT) {
-                let ready = await setupFallbackSTT();
-                if (!ready) { active = false; return; }
-            } else {
-                setupRecognition();
+                if (!mediaRecorder) return;
+                setPhase('listening');
+                try {
+                    audioChunks = [];
+                    speechDetected = false;
+                    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+
+                    mediaRecorder.start();
+                    // Inform user it's automatic now
+                    statusLabel.textContent = 'Listening... (Auto-sensing)';
+                } catch (err) {
+                    console.warn('[Fallback STT] start() failed:', err.message);
+                    if (err.name === 'InvalidStateError') {
+                        setPhase('listening');
+                        statusLabel.textContent = 'Listening...';
+                    }
+                }
+                return;
             }
 
-            // CRITICAL: Call speak() directly in user gesture context.
-            speak("Hello Ishita, I'm Jarvis. How can I help you?");
-        } else {
-            // If already active, handle push-to-stop for fallback mechanism
-            if (useFallbackSTT && phase === 'listening' && mediaRecorder && mediaRecorder.state === 'recording') {
-                setPhase('thinking');
-                mediaRecorder.stop();
+            if (!recognition) return;
+            setPhase('listening');
+            try {
+                recognition.start();
+            } catch (err) {
+                console.warn('[STT] start() failed:', err.message);
+                if (err.name === 'InvalidStateError') {
+                    setPhase('listening');
+                } else {
+                    setTimeout(startListening, 800);
+                }
             }
         }
-    });
+
+        function stopListening() {
+            if (useFallbackSTT && mediaRecorder && mediaRecorder.state === 'recording') {
+                try { mediaRecorder.stop(); } catch (_) { }
+                return;
+            }
+            if (!recognition) return;
+            try { recognition.abort(); } catch (_) { }
+        }
+
+        // ─── TTS: Jarvis speaks ───
+        let speakQueue = [];
+
+        function speak(text) {
+            if (!active || !window.speechSynthesis) return;
+
+            stopListening();
+            setPhase('speaking');
+
+            const clean = cleanText(text);
+            if (!clean) {
+                afterSpeak();
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            clearTTSTimer();
+
+            // Chunk the text into sentences to bypass Chrome length limits and 'interrupted' bugs
+            // Split by punctuation (., !, ?) keeping the punctuation marks.
+            // Or if it's just a long string without punctuation, split by newlines.
+            const chunks = clean.match(/[^.!?\n]+[.!?\n]+/g) || [clean];
+            speakQueue = chunks.map(c => c.trim()).filter(c => c.length > 0);
+
+            if (speakQueue.length === 0) {
+                speakQueue = [clean];
+            }
+
+            speakNextChunk();
+        }
+
+        function speakNextChunk() {
+            if (!active || speakQueue.length === 0) {
+                afterSpeak();
+                return;
+            }
+
+            const chunkText = speakQueue.shift();
+            const utt = new SpeechSynthesisUtterance(chunkText);
+
+            const hindi = /[\u0900-\u097F]/.test(chunkText);
+            utt.lang = hindi ? 'hi-IN' : 'en-US';
+            utt.rate = 1.05;
+            utt.pitch = 1.0;
+
+            function pickVoice() {
+                const voices = window.speechSynthesis.getVoices();
+                const preferred = voices.find(v =>
+                    v.lang.startsWith(hindi ? 'hi' : 'en') && v.name.includes('Google')
+                ) || voices.find(v =>
+                    v.lang.startsWith(hindi ? 'hi' : 'en')
+                );
+                if (preferred) utt.voice = preferred;
+            }
+            pickVoice();
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = pickVoice;
+            }
+
+            utt.onend = () => {
+                clearTTSTimer();
+                if (active) {
+                    // Short natural pause between sentences
+                    setTimeout(speakNextChunk, 150);
+                }
+            };
+
+            utt.onerror = (e) => {
+                console.warn('[TTS] Error on chunk (', chunkText.substring(0, 10), '...):', e.error);
+                clearTTSTimer();
+                if (!active) return;
+
+                if (e.error !== 'interrupted' && e.error !== 'canceled') {
+                    // If it's a random glitch, just silently move to next chunk
+                    setTimeout(speakNextChunk, 150);
+                } else {
+                    // Interrupted usually means we cancelled it deliberately
+                    afterSpeak();
+                }
+            };
+
+            // Watchdog per chunk
+            const charRate = 12;
+            const estimatedMs = Math.max(3000, (chunkText.length / charRate) * 1000);
+            ttsTimer = setTimeout(() => {
+                console.warn('[TTS] Watchdog fired on chunk — forcing next');
+                window.speechSynthesis.cancel();
+                speakNextChunk();
+            }, estimatedMs + 2500);
+
+            window.speechSynthesis.speak(utt);
+        }
+
+        function afterSpeak() {
+            clearTTSTimer();
+            if (!active) return;
+            console.log('[TTS] Done — going back to listening');
+            // CRITICAL: Reset phase BEFORE calling startListening.
+            // startListening() used to bail if phase==='speaking' — now we're safe.
+            phase = 'idle';
+            setPhase('idle');
+            setTimeout(startListening, 500);
+        }
+
+        function clearTTSTimer() {
+            if (ttsTimer) { clearTimeout(ttsTimer); ttsTimer = null; }
+        }
+
+        // ─── Socket events ───
+        socket.on('connect', () => console.log('[Socket] Connected'));
+        socket.on('disconnect', () => console.log('[Socket] Disconnected'));
+
+        socket.on('bot_message', (data) => {
+            console.log('[Socket] Bot replied:', data.text?.slice(0, 60));
+            speak(data.text || '');
+        });
+
+        socket.on('stt_failed', (data) => {
+            console.warn('[Socket] Fallback STT empty or failed:', data.message);
+            // Start listening again naturally
+            afterSpeak();
+        });
+
+        // ─── Orb tap — START CALL ───
+        orbRing.addEventListener('click', async () => {
+            if (!active) {
+                if (!window.speechSynthesis) return;
+
+                active = true;
+                startHint.classList.add('hidden');
+
+                // Quick check for Brave to set expectation
+                const isBrave = (navigator.brave && await navigator.brave.isBrave()) || false;
+                if (isBrave) {
+                    console.log('[System] Brave detected. Native STT may fail, ready for fallback.');
+                }
+
+                if (useFallbackSTT) {
+                    let ready = await setupFallbackSTT();
+                    if (!ready) { active = false; return; }
+                } else {
+                    setupRecognition();
+                }
+
+                // CRITICAL: Call speak() directly in user gesture context.
+                speak("Hello Ishita, I'm Jarvis. How can I help you?");
+            } else {
+                // If already active, handle push-to-stop for fallback mechanism
+                if (useFallbackSTT && phase === 'listening' && mediaRecorder && mediaRecorder.state === 'recording') {
+                    setPhase('thinking');
+                    mediaRecorder.stop();
+                }
+            }
+        });
 
 
-    // ─── End call button ───
-    endBtn.addEventListener('click', () => {
-        active = false;
-        clearTTSTimer();
-        stopListening();
-        window.speechSynthesis.cancel();
-        window.location.href = '/';
-    });
+        // ─── End call button ───
+        endBtn.addEventListener('click', () => {
+            active = false;
+            clearTTSTimer();
+            stopListening();
+            window.speechSynthesis.cancel();
+            window.location.href = '/';
+        });
 
-    // ─── Particle background ───
-    (function initParticles() {
-        const canvas = document.getElementById('particles');
-        const ctx    = canvas.getContext('2d');
-        function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-        resize();
-        window.addEventListener('resize', resize);
+        // ─── Particle background ───
+        (function initParticles() {
+            const canvas = document.getElementById('particles');
+            const ctx = canvas.getContext('2d');
+            function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+            resize();
+            window.addEventListener('resize', resize);
 
-        const dots = Array.from({ length: 100 }, () => ({
-            x: Math.random() * innerWidth,
-            y: Math.random() * innerHeight,
-            r: Math.random() * 1.4 + 0.3,
-            s: Math.random() * 0.35 + 0.05
-        }));
+            const dots = Array.from({ length: 100 }, () => ({
+                x: Math.random() * innerWidth,
+                y: Math.random() * innerHeight,
+                r: Math.random() * 1.4 + 0.3,
+                s: Math.random() * 0.35 + 0.05
+            }));
 
-        (function frame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            dots.forEach(d => {
-                ctx.fillStyle = 'rgba(0,210,255,0.4)';
-                ctx.beginPath();
-                ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-                ctx.fill();
-                d.y -= d.s;
-                if (d.y < 0) { d.y = canvas.height; d.x = Math.random() * canvas.width; }
-            });
-            requestAnimationFrame(frame);
+            (function frame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                dots.forEach(d => {
+                    ctx.fillStyle = 'rgba(0,210,255,0.4)';
+                    ctx.beginPath();
+                    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+                    ctx.fill();
+                    d.y -= d.s;
+                    if (d.y < 0) { d.y = canvas.height; d.x = Math.random() * canvas.width; }
+                });
+                requestAnimationFrame(frame);
+            })();
         })();
-    })();
     </script>
 </body>
+
 </html>
